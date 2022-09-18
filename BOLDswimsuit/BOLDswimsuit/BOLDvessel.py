@@ -73,8 +73,12 @@ class InfiniteCylinder3D:
             ]
         )
 
+        # hard coded for [0, 0, 1] B0 direction (for extremely small performance increase)
         B0_direction = np.array([0, 0, 1])
         self.B0_projection_vector = B0_direction-self.normal_vector[2]*self.normal_vector
+
+        # projection for arbitrary B0 is:
+        # self.B0_projection_vector = B0_direction - np.dot(B0_direction, self.normal_vector) / (np.linalg.norm(B0_direction * self.normal_vector)) * self.normal_vector
 
     def dBz_mask_from_positions(self, positions, B0):
 
