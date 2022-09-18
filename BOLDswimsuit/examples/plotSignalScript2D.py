@@ -22,14 +22,14 @@ def main():
 
         id_dchis =                      {'identifier1': 3e-8},      #susceptibility difference (vessel to tissue) of each id in cgs                    
 
-        id_permeation_probabilities =   {'identifier1': 1},         #permeation probability of each id
+        id_permeation_probabilities =   {'identifier1': 0},         #permeation probability of each id
 
         # SPIN PARAMETERS
         ADC=0.001,          #diffusion length (mm^2/s)
         B0=3,               #magnetic field strength (T)
         dt=0.2,             #time step (ms)
-        num_dt=300,          #number of time steps
-        num_spins=400_000,     #number of spins
+        num_dt=600,          #number of time steps
+        num_spins=1_000,     #number of spins
 
         # SIGNAL PARAMETERS
         pulse_time_indices=[0, 175],                                 #pulse time indices (first pulse always at 0)
@@ -37,7 +37,7 @@ def main():
         pulse_axes=[[np.pi/2, np.pi/2], [np.pi/2, 0]],        #pulse axes in polar coordinates (radians) (phi,theta)
         
         # OPTIONAL PARAMETERS
-        num_vessels=400,                     #number of vessels
+        num_vessels=100,                     #number of vessels
         edge_width=0,                        #sampling region border width (as a fraction of the space - must be < 0.5)
         allow_vessel_intersection=True,       #whether to check for vessel intersection during voxel generation
         T1IV=None,                          #intravascular T1 value in ms, ignored if set to None
