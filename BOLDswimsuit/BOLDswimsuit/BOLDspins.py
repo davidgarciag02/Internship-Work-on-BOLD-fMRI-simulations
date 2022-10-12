@@ -323,27 +323,27 @@ class SpinsDiscrete3D:
         h = np.sqrt(self.ADC * 2 * (self.dt / 1000))
 
         # randomly positions spins in the voxel
-        prev_pos = np.empty((self.num_spins, 3))
-        prev_pos[:, :] = self.positions[:, 0, :]
+        previous_position = np.empty((self.num_spins, 3))
+        previous_position[:, :] = self.positions[:, 0, :]
 
         # checks if initial spin positions are IV and calculates dBz / phase
-        prev_grid_pos = self.position_to_grid(prev_pos, grid)
-        self.phase[:, 0] = grid.phase[prev_grid_pos]
-        self.is_IV[:, 0] = grid.mask[prev_grid_pos]
+        previous_grid_positions = self.position_to_grid(previous_position, grid)
+        self.phase[:, 0] = grid.phase[previous_grid_positions]
+        self.is_IV[:, 0] = grid.mask[previous_grid_positions]
 
         # iterating through all time steps
         text = 'Diffusing Spins'
         for j in tqdm(range(1, self.num_dt), desc=text, disable=not progressbar):
 
             # calculate a new position for all spins (random walk)
-            new_pos = prev_pos + h * self.rng.normal(size=(self.num_spins, 3))
-            new_pos += grid.size * \
-                (1 * (new_pos < -0.5 * grid.size) -
-                    1 * (new_pos > 0.5 * grid.size))
+            new_position = previous_position + h * self.rng.normal(size=(self.num_spins, 3))
+            new_position += grid.size * \
+                (1 * (new_position < -0.5 * grid.size) -
+                    1 * (new_position > 0.5 * grid.size))
 
             # checks if new spin positions are IV and calculates dBz /
             # phase
-            self.is_IV[:, j] = grid.mask[self.position_to_grid(new_pos, grid)]
+            self.is_IV[:, j] = grid.mask[self.position_to_grid(new_position, grid)]
 
             # finds all spins that pass through a vessel wall (diffusing)
             diffusing_spin_indices = ((self.is_IV[:, j-1] != self.is_IV[:, j])).nonzero()[0]
@@ -371,19 +371,19 @@ class SpinsDiscrete3D:
                     # across a vessel wall
                     is_diffused = True
                     while is_diffused:
-                        new_pos[i, :] = prev_pos[i, :] + h * self.rng.normal(size=(3))
-                        new_pos[i,:] += grid.size * \
-                            (1 * (new_pos[i,:] < -0.5 * grid.size) - \
-                                1 * (new_pos[i,:] > 0.5 * grid.size))
+                        new_position[i, :] = previous_position[i, :] + h * self.rng.normal(size=(3))
+                        new_position[i,:] += grid.size * \
+                            (1 * (new_position[i,:] < -0.5 * grid.size) - \
+                                1 * (new_position[i,:] > 0.5 * grid.size))
 
-                        is_diffused = self.check_diffusion(new_pos[i, :], self.is_IV[i, j-1], grid)
+                        is_diffused = self.check_diffusion(new_position[i, :], self.is_IV[i, j-1], grid)
 
-            new_grid_pos = self.position_to_grid(new_pos, grid)
-            self.is_IV[:, j] = grid.mask[new_grid_pos]
-            self.phase[:, j] = grid.phase[new_grid_pos]
+            new_grid_position = self.position_to_grid(new_position, grid)
+            self.is_IV[:, j] = grid.mask[new_grid_position]
+            self.phase[:, j] = grid.phase[new_grid_position]
 
             # new position becomes the previous position
-            prev_pos = new_pos 
+            previous_position = new_position 
 
     def check_diffusion(
         self,
@@ -392,8 +392,8 @@ class SpinsDiscrete3D:
         grid: BOLDgrid.Grid3D
     ):
         # check if the spin has diffused in any vessels
-        pos = np.expand_dims(new_pos, axis=0)
-        is_diffused = prev_is_IV_number != grid.mask[self.position_to_grid(pos, grid)]
+        position = np.expand_dims(new_pos, axis=0)
+        is_diffused = prev_is_IV_number != grid.mask[self.position_to_grid(position, grid)]
         return is_diffused 
 
     def place_spins(
@@ -404,12 +404,12 @@ class SpinsDiscrete3D:
     ):
         if IV:
             # creating extra- and intra-vascular spins
-            self.pos[:, 0, :] = grid.size * \
+            self.positions[:, 0, :] = grid.size * \
                 (self.rng.random((self.num_spins, 3)) - 0.5)
 
         elif not IV:
-            pos = grid.size * (self.rng.random((self.num_spins, 3)) - 0.5)
-            grid_pos = self.position_to_grid(pos, grid)
+            position = grid.size * (self.rng.random((self.num_spins, 3)) - 0.5)
+            grid_pos = self.position_to_grid(position, grid)
 
             is_IV = grid.mask[grid_pos] > 0
             
@@ -420,13 +420,13 @@ class SpinsDiscrete3D:
                 is_IV_fix = True
                 while is_IV_fix:
                     # generate position
-                    init_pos = grid.size * (self.rng.random((1, 3)) - 0.5)
+                    initial_position = grid.size * (self.rng.random((1, 3)) - 0.5)
                     # check if position is in any vessel
-                    is_IV_fix = np.all(grid.mask[ self.position_to_grid(init_pos, grid) ] > 0)
+                    is_IV_fix = np.all(grid.mask[ self.position_to_grid(initial_position, grid) ] > 0)
 
-                pos[i, :] = init_pos
+                position[i, :] = initial_position
 
-            self.pos[:, 0, :] = pos
+            self.positions[:, 0, :] = position
 
     def position_to_grid(
         self,
@@ -448,7 +448,7 @@ class SpinsDiscrete3D:
 
         # create the boolean array
         self.sample = np.concatenate(
-            (np.ones((self.num_spins, 1)), 1 * np.all(np.abs(self.pos) <= sample_size, 2)), 1)
+            (np.ones((self.num_spins, 1)), 1 * np.all(np.abs(self.positions) <= sample_size, 2)), 1)
 
 class SpinsContinuous2D:
 
@@ -722,7 +722,6 @@ class SpinsContinuous2D:
         self.sample = np.concatenate(
             (np.ones((self.num_spins, 1)), 1 * np.all(np.abs(self.positions) <= sample_size, 2)), 1)
 
-
 class SpinsDiscrete2D:
 
     def __init__(
@@ -744,7 +743,7 @@ class SpinsDiscrete2D:
         self.N = None
         self.edge_width = edge_width
 
-        self.pos = np.zeros((self.num_spins, self.num_dt, 2))
+        self.positions = np.zeros((self.num_spins, self.num_dt, 2))
         self.sample = None
 
         self.phase = np.zeros((self.num_spins, self.num_dt))
@@ -772,27 +771,27 @@ class SpinsDiscrete2D:
         h = np.sqrt(self.ADC * 2 * (self.dt / 1000))
 
         # randomly positions spins in the voxel
-        prev_pos = np.empty((self.num_spins, 2))
-        prev_pos[:, :] = self.pos[:, 0, :]
+        previous_position = np.empty((self.num_spins, 2))
+        previous_position[:, :] = self.positions[:, 0, :]
 
         # checks if initial spin positions are IV and calculates dBz / phase
-        prev_grid_pos = self.position_to_grid(prev_pos, grid)
-        self.phase[:, 0] = grid.phase[prev_grid_pos]
-        self.is_IV[:, 0] = grid.mask[prev_grid_pos]
+        previous_grid_position = self.position_to_grid(previous_position, grid)
+        self.phase[:, 0] = grid.phase[previous_grid_position]
+        self.is_IV[:, 0] = grid.mask[previous_grid_position]
 
         # iterating through all time steps
         text = 'Diffusing Spins'
         for j in tqdm(range(1, self.num_dt), desc=text, disable=not progressbar):
 
             # calculate a new position for all spins (random walk)
-            new_pos = prev_pos + h * self.rng.normal(size=(self.num_spins, 2))
-            new_pos += grid.size * \
-                (1 * (new_pos < -0.5 * grid.size) -
-                    1 * (new_pos > 0.5 * grid.size))
+            new_position = previous_position + h * self.rng.normal(size=(self.num_spins, 2))
+            new_position += grid.size * \
+                (1 * (new_position < -0.5 * grid.size) -
+                    1 * (new_position > 0.5 * grid.size))
 
             # checks if new spin positions are IV and calculates dBz /
             # phase
-            self.is_IV[:, j] = grid.mask[self.position_to_grid(new_pos, grid)]
+            self.is_IV[:, j] = grid.mask[self.position_to_grid(new_position, grid)]
 
             # finds all spins that pass through a vessel wall (diffusing)
             diffusing_spin_indices = ((self.is_IV[:, j-1] != self.is_IV[:, j])).nonzero()[0]
@@ -801,10 +800,10 @@ class SpinsDiscrete2D:
             for i in diffusing_spin_indices:
                 # finds if the spin was IV before and after the diffusion
                 # through the vessel wall
-                prev_is_IV = self.is_IV[i, j-1] > 0
+                previous_is_IV = self.is_IV[i, j-1] > 0
 
                 # finds the vessel object whose wall the spin is crossing
-                if prev_is_IV:
+                if previous_is_IV:
                     vsl_number = self.is_IV[i, j-1]
                 else:
                     vsl_number = self.is_IV[i, j]
@@ -820,22 +819,22 @@ class SpinsDiscrete2D:
                     # across a vessel wall
                     is_diffused = True
                     while is_diffused:
-                        new_pos[i, :] = prev_pos[i, :] + h * self.rng.normal(size=(2))
-                        new_pos[i,:] += grid.size * \
-                            (1 * (new_pos[i,:] < -0.5 * grid.size) - \
-                                1 * (new_pos[i,:] > 0.5 * grid.size))
+                        new_position[i, :] = previous_position[i, :] + h * self.rng.normal(size=(2))
+                        new_position[i,:] += grid.size * \
+                            (1 * (new_position[i,:] < -0.5 * grid.size) - \
+                                1 * (new_position[i,:] > 0.5 * grid.size))
 
-                        is_diffused = self.check_diffusion(new_pos[i, :], self.is_IV[i, j-1], grid)
+                        is_diffused = self.check_diffusion(new_position[i, :], self.is_IV[i, j-1], grid)
 
-            new_grid_pos = self.position_to_grid(new_pos, grid)
-            self.is_IV[:, j] = grid.mask[new_grid_pos]
-            self.phase[:, j] = grid.phase[new_grid_pos]
+            new_grid_position = self.position_to_grid(new_position, grid)
+            self.is_IV[:, j] = grid.mask[new_grid_position]
+            self.phase[:, j] = grid.phase[new_grid_position]
 
             # assign the new positions
-            self.pos[:, j, :] = new_pos
+            self.positions[:, j, :] = new_position
 
             # new position becomes the previous position
-            prev_pos = new_pos 
+            previous_position = new_position 
 
     def check_diffusion(
         self,
@@ -844,8 +843,8 @@ class SpinsDiscrete2D:
         grid: BOLDgrid.Grid2D
     ):
         # check if the spin has diffused in any vessels
-        pos = np.expand_dims(new_pos, axis=0)
-        is_diffused = prev_is_IV_number != grid.mask[self.position_to_grid(pos, grid)]
+        position = np.expand_dims(new_pos, axis=0)
+        is_diffused = prev_is_IV_number != grid.mask[self.position_to_grid(position, grid)]
         return is_diffused 
 
     def place_spins(
@@ -856,14 +855,14 @@ class SpinsDiscrete2D:
     ):
         if IV:
             # creating extra- and intra-vascular spins
-            self.pos[:, 0, :] = grid.size * \
+            self.positions[:, 0, :] = grid.size * \
                 (self.rng.random((self.num_spins, 2)) - 0.5)
 
         elif not IV:
-            pos = grid.size * (self.rng.random((self.num_spins, 2)) - 0.5)
-            grid_pos = self.position_to_grid(pos, grid)
+            position = grid.size * (self.rng.random((self.num_spins, 2)) - 0.5)
+            grid_position = self.position_to_grid(position, grid)
 
-            is_IV = grid.mask[grid_pos] > 0
+            is_IV = grid.mask[grid_position] > 0
             
             IV_spins = is_IV.nonzero()[0]
 
@@ -872,13 +871,13 @@ class SpinsDiscrete2D:
                 is_IV_fix = True
                 while is_IV_fix:
                     # generate position
-                    init_pos = grid.size * (self.rng.random((1, 2)) - 0.5)
+                    initial_position = grid.size * (self.rng.random((1, 2)) - 0.5)
                     # check if position is in any vessel
-                    is_IV_fix = np.all(grid.mask[ self.position_to_grid(init_pos, grid) ] > 0)
+                    is_IV_fix = np.all(grid.mask[ self.position_to_grid(initial_position, grid) ] > 0)
 
-                pos[i, :] = init_pos
+                position[i, :] = initial_position
 
-            self.pos[:, 0, :] = pos
+            self.positions[:, 0, :] = position
 
     def position_to_grid(
         self,
@@ -899,4 +898,4 @@ class SpinsDiscrete2D:
 
         # create the boolean array
         self.sample = np.concatenate(
-            (np.ones((self.num_spins, 1)), 1 * np.all(np.abs(self.pos) <= sample_size, 2)), 1)
+            (np.ones((self.num_spins, 1)), 1 * np.all(np.abs(self.positions) <= sample_size, 2)), 1)
