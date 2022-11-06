@@ -313,11 +313,10 @@ class SpinsDiscrete3D:
         grid: BOLDgrid.Grid3D,
         progressbar: bool=True
     ):
+        self.N = grid.N
 
         # populating the inital position of the spins (at t=0)
         self.place_spins(IV, grid, progressbar)
-
-        self.N = grid.N
 
         # calculate the diffusion distance
         h = np.sqrt(self.ADC * 2 * (self.dt / 1000))
@@ -761,11 +760,11 @@ class SpinsDiscrete2D:
         grid: BOLDgrid.Grid2D,
         progressbar: bool=True
     ):
+    
+        self.N = grid.N
 
         # populating the inital position of the spins (at t=0)
         self.place_spins(IV, grid, progressbar)
-
-        self.N = grid.N
 
         # calculate the diffusion distance
         h = np.sqrt(self.ADC * 2 * (self.dt / 1000))

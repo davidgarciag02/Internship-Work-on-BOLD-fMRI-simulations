@@ -531,7 +531,8 @@ class SimulationDiscrete2D:
                 sequence=self.sequence,
                 kernel_type=kernel_type,
                 cplx=cplx,
-                permeable=permeable
+                permeable=permeable,
+                progressbar=progressbar
             )
 
         end = datetime.datetime.now()
