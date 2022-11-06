@@ -98,9 +98,6 @@ class Grid3D:
         shift = int(np.floor(N/2) - 1) - padding
         phase_padded = np.roll(phase_padded, shift=(-shift, -shift, -shift), axis=(0,1,2))
         
-        #import matplotlib.pyplot as plt
-        #plt.imshow(phase_padded[:,:,100])
-        #plt.show()
         if padding > 0:
             phase = phase_padded[padding:-padding,padding:-padding,padding:-padding]
         else:
