@@ -71,7 +71,6 @@ class DeterministicDiffuser2D:
         intervals = list(sequence.pulse_time_indices)
         
         current_interval = 0
-        
         text = 'Applying Deterministic Diffusion'
         for j in tqdm(range(1, self.num_dt+1), desc=text, disable=not progressbar):
             if permeable:

@@ -48,7 +48,7 @@ class Grid3D:
             self.size = size
             self.padding = padding
             self.permeation_probability_list = [id_permeation_probabilities[i] for i in id_permeation_probabilities] if id_permeation_probabilities is not None else None
-            self.dchi_list = [id_dchis[i] for i in id_dchis.keys]
+            self.dchi_list = [id_dchis[i] for i in id_dchis]
             self._generate_grid_FFT_from_file(file) 
 
         elif mode == 'MaskFromVoxel':
@@ -59,11 +59,11 @@ class Grid3D:
     @staticmethod
     def dchi_mask_to_phase_FFT(
         grid_dchi: np.ndarray,
-        N: int,
         padding: int,
         dt: float,
         B0: float
     ):
+        N = grid_dchi.shape[0]
         half_N = int(np.ceil(N/2))
 
         if N % 2 != 0:
@@ -95,7 +95,13 @@ class Grid3D:
             )
         )
 
-        if padding != 0:
+        shift = int(np.floor(N/2) - 1) - padding
+        phase_padded = np.roll(phase_padded, shift=(-shift, -shift, -shift), axis=(0,1,2))
+        
+        #import matplotlib.pyplot as plt
+        #plt.imshow(phase_padded[:,:,100])
+        #plt.show()
+        if padding > 0:
             phase = phase_padded[padding:-padding,padding:-padding,padding:-padding]
         else:
             phase = phase_padded
@@ -126,10 +132,7 @@ class Grid3D:
         elif file_extension == '.mat':
             mask_dict = io.loadmat(filepath, mdict=None, appendmat=True)
         
-            for key in mask_dict.keys():
-                if isinstance(mask_dict[key], np.ndarray):
-                    self.mask = mask_dict[key]
-                    break
+            self.mask = mask_dict['mask']
 
             if not all([N == self.mask.shape[0] for N in self.mask.shape]) and len(self.mask.shape) != 3:
                 raise Exception('Input MATLAB mask is not isometric!')
@@ -170,13 +173,17 @@ class Grid3D:
             
             self.mask[mask_tmp] = vsl_counter + 1
             grid_dchi[mask_tmp] = vsl.dchi
-
-        if extend:
-            self.mask = self.mask[self.padding:-self.padding,self.padding:-self.padding,self.padding:-self.padding]
-            grid_dchi = np.roll(grid_dchi, shift=(-self.padding+1,-self.padding+1,-self.padding+1), axis=(0,1,2))
         
         self.permeation_probability_list = [vsl.permeation_probability for vsl in voxel.vessels]
-        self.phase = self.dchi_mask_to_phase_FFT(grid_dchi, self.N, self.padding, self.B0, self.dt)
+
+        if extend:
+            self.phase = self.dchi_mask_to_phase_FFT(grid_dchi, 0, self.B0, self.dt)
+        else:
+            self.phase = self.dchi_mask_to_phase_FFT(grid_dchi, self.padding, self.B0, self.dt)
+
+        if extend and self.padding > 0:
+            self.mask = self.mask[self.padding:-self.padding,self.padding:-self.padding,self.padding:-self.padding]
+            self.phase = self.phase[self.padding:-self.padding,self.padding:-self.padding,self.padding:-self.padding]
 
     def _generate_grid_analytical_from_voxel(
         self,
