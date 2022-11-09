@@ -27,7 +27,7 @@ class Grid3D:
 
     def populate(
         self,
-        mode: str='FFTfromVoxel',
+        mode: str='FFTFromVoxel',
         size: Optional[float] = None,
         padding: Optional[float]=None,
         id_permeation_probabilities: Optional[Dict[int, float]]=None,
@@ -145,7 +145,7 @@ class Grid3D:
         for i, dchi in enumerate(self.dchi_list):
             grid_dchi[grid_dchi == i+1] = dchi
         
-        self.phase = self.dchi_mask_to_phase_FFT(grid_dchi, self.N, self.padding, self.dt)
+        self.phase = self.dchi_mask_to_phase_FFT(grid_dchi, self.padding, self.dt, self.B0)
 
     def _generate_grid_FFT_from_voxel(
         self,
@@ -174,9 +174,9 @@ class Grid3D:
         self.permeation_probability_list = [vsl.permeation_probability for vsl in voxel.vessels]
 
         if extend:
-            self.phase = self.dchi_mask_to_phase_FFT(grid_dchi, 0, self.B0, self.dt)
+            self.phase = self.dchi_mask_to_phase_FFT(grid_dchi, 0, self.dt, self.B0)
         else:
-            self.phase = self.dchi_mask_to_phase_FFT(grid_dchi, self.padding, self.B0, self.dt)
+            self.phase = self.dchi_mask_to_phase_FFT(grid_dchi, self.padding, self.dt, self.B0)
 
         if extend and self.padding > 0:
             self.mask = self.mask[self.padding:-self.padding,self.padding:-self.padding,self.padding:-self.padding]
@@ -251,12 +251,12 @@ class Grid2D:
 
     def populate(
         self,
-        mode: str='FFTfromVoxel',
+        mode: str='FFTFromVoxel',
         size: Optional[float] = None,
         padding: Optional[float]=None,
         id_permeation_probabilities: Optional[Dict[int, float]]=None,
         id_dchis: Optional[Dict[int,float]]=None,
-        voxel: Optional[BOLDvoxel.Voxel3D]=None,
+        voxel: Optional[BOLDvoxel.Voxel2D]=None,
         file: Optional[str]=None,
         extend: bool=False,
         progressbar: bool=True
@@ -332,6 +332,8 @@ class Grid2D:
         self,
         filepath: str
     ):  
+        #FIXME This does not work
+        raise Exception('FFT methods not currently working!')
         
         filename, file_extension = os.path.splitext(filepath)
 
