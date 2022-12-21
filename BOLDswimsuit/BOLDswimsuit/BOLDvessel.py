@@ -3,8 +3,6 @@ from numba import float64, uint8   # import the types
 from numba.experimental import jitclass
 from typing import Union
 
-################################# Infinite Cylinder #################################
-
 spec_infinite_cylinder_3D = [
     ('identifier', uint8[:]),
     ('diameter', float64),
@@ -19,7 +17,7 @@ spec_infinite_cylinder_3D = [
 ]
 
 @jitclass(spec_infinite_cylinder_3D)
-class InfiniteCylinder3D:
+class InfiniteCylinder3DNumba:
     """3D infinite cylinder object
     """    
 
@@ -199,6 +197,111 @@ class InfiniteCylinder3D:
         radial_vectors = self.origin - projected_positions
         return radial_vectors
 
+class InfiniteCylinder3D:
+
+    def __new__(
+        cls,
+        diameter: float,
+        theta: float, 
+        phi: float, 
+        origin: np.ndarray, 
+        dchi: float, 
+        permeation_probability: float=0,
+        identifier: str='None', 
+        volume_percent: float=0.0,
+    ):
+        """Object containing all parameters for an infinite cylinder vessel
+
+        Parameters
+        ----------
+        identifier : str
+            string to identify the vessel.
+        diameter : float
+            vessel diameter (mm)
+        theta : float
+            zenith angle of the vessel direction (radians)
+        phi : float
+            azimuth angle of the vessel direction (radians)
+        origin : np.ndarray
+            cartesian coordinates of the vessel origin (mm)
+        volume_percent : float
+            volume contribution of the vessel (fraction of 1)
+        dchi : float
+            susceptibility difference between the vessel and the surrounding tissue (cgs units)
+        permeation_probability : float
+            probability for a spin to permeate through the vesel wall (fraction of 1)
+        """
+
+        # create vessel identifier in char array format (for Numba)
+        id_encoded = np.frombuffer(identifier.encode(),dtype='uint8')
+    
+        return InfiniteCylinder3DNumba(
+            identifier=id_encoded,
+            diameter=diameter,
+            theta=theta, 
+            phi=phi, 
+            origin=origin, 
+            volume_percent=volume_percent, 
+            dchi=dchi, 
+            permeation_probability=permeation_probability 
+        )
+
+    @staticmethod
+    def from_random(
+        diameter: float, 
+        dchi: float,
+        voxel_size: float,
+        permeation_probability: float=0,
+        identifier: str='None',
+        rng = np.random.default_rng()
+    ) -> InfiniteCylinder3DNumba:
+
+        # calculate radius of the sphere around the voxel
+        voxel_sphere_radius = 0.5 * np.sqrt(3) * voxel_size
+
+        # generate a random direction for the vessel
+        theta = np.arccos(2 * rng.random() - 1)
+        phi = 2 * np.pi * rng.random()
+
+        # generate a random point on the circle slice
+        alpha = 2 * np.pi * rng.random()
+        r = voxel_sphere_radius * np.sqrt(rng.random())
+
+        # calculate some trigonometric values in advance, for speed
+        calpha = np.cos(alpha)
+        salpha = np.sin(alpha)
+        cphi = np.cos(phi)
+        sphi = np.sin(phi)
+        ctheta = np.cos(theta)
+        stheta = np.sin(theta)
+
+        # calculating the origin coordinates
+        x = r * (calpha * ctheta * cphi - salpha * sphi)
+        y = r * (calpha * ctheta * sphi + salpha * cphi)
+        z = -r * calpha * stheta
+        origin = np.array([x, y, z])
+
+        # calculate the estimated volume percent of the generated vessel
+        height = 2 * np.sqrt(voxel_sphere_radius**2 - r**2)
+        total_volume = 4 / 3 * np.pi * voxel_sphere_radius**3
+        volume = height * np.pi * (diameter / 2)**2
+        volume_percent = volume / total_volume
+
+        # create vessel identifier in char array format (for Numba)
+        id_encoded = np.frombuffer(identifier.encode(), dtype='uint8')
+
+        # return vessel object with the generated components
+        return InfiniteCylinder3DNumba(
+            id_encoded,
+            diameter,
+            theta,
+            phi,
+            origin,
+            volume_percent,
+            dchi,
+            permeation_probability
+        )
+
 spec_infinite_cylinder_2D = [
     ('identifier', uint8[:]),
     ('diameter', float64),
@@ -213,7 +316,7 @@ spec_infinite_cylinder_2D = [
 ]
 
 @jitclass(spec_infinite_cylinder_2D)
-class InfiniteCylinder2D:
+class InfiniteCylinder2DNumba:
               
     def __init__(
         self, 
@@ -352,9 +455,68 @@ class InfiniteCylinder2D:
         
         return (radial_distances, cos_2phis)  
 
+class InfiniteCylinder2D:
 
+    def __new__(
+        cls,
+        diameter: float,
+        B0_theta: float, 
+        B0_phi: float, 
+        origin: np.ndarray, 
+        dchi: float, 
+        permeation_probability: float=0,
+        identifier: str='None', 
+        volume_percent: float=0.0,
+    ):
+        # create vessel identifier in char array format (for Numba)
+        id_encoded = np.frombuffer(identifier.encode(),dtype='uint8')
+    
+        return InfiniteCylinder2DNumba(
+            identifier=id_encoded,
+            diameter=diameter,
+            B0_theta=B0_theta, 
+            B0_phi=B0_phi, 
+            origin=origin, 
+            volume_percent=volume_percent, 
+            dchi=dchi, 
+            permeation_probability=permeation_probability 
+        )
 
-################################# Sphere #################################
+    @staticmethod
+    def from_random(
+        diameter: float, 
+        dchi: float,
+        voxel_size: float,
+        permeation_probability: float=0,
+        identifier: str='None',
+        rng = np.random.default_rng()
+    ) -> InfiniteCylinder3DNumba:
+
+        origin = (rng.random(2)-0.5)*voxel_size    
+        
+        total_volume = voxel_size**2
+        vessel_volume = np.pi*(diameter/2)**2
+        
+        volume_percent = vessel_volume/total_volume
+        
+        B0_theta=np.arccos(2*rng.random()-1)
+        B0_phi=2*np.pi*rng.random()
+
+        # create vessel identifier in char array format (for Numba)
+        id_encoded = np.frombuffer(identifier.encode(), dtype='uint8')
+        
+        #create a new vessel object using the generated parameters and add it to the vessel list
+        return InfiniteCylinder2DNumba(
+            id_encoded,
+            diameter,
+            B0_theta,
+            B0_phi,
+            origin,
+            volume_percent,
+            dchi,
+            permeation_probability,
+        )
+
 spec_sphere_3D = [
     ('identifier', uint8[:]),
     ('diameter', float64),
@@ -365,11 +527,11 @@ spec_sphere_3D = [
 ]
 
 @jitclass(spec_sphere_3D)
-class Sphere3D:
+class Sphere3DNumba:
 
     def __init__(self,
         identifier,
-        diamerter,
+        diameter,
         origin, 
         volume_percent,
         dchi,
@@ -395,7 +557,7 @@ class Sphere3D:
 
         # initializing the vessel parameters to the vessel object
         self.identifier = identifier
-        self.diameter = diamerter
+        self.diameter = diameter
         self.origin = origin
         self.volume_percent = volume_percent 
         self.dchi = dchi
@@ -466,6 +628,79 @@ class Sphere3D:
         cos_thetas = z/radial_distances
         return radial_distances, cos_thetas
 
+class Sphere3D:
 
-Vessel3D = Union[InfiniteCylinder3D, Sphere3D]
-Vessel2D = InfiniteCylinder2D
+    def __new__(
+        cls,
+        diameter: float,
+        origin: np.ndarray, 
+        dchi: float, 
+        permeation_probability: float=0,
+        identifier: str='None', 
+        volume_percent: float=0.0,
+    ):
+        """Object containing all parameters for an infinite cylinder vessel
+
+        Parameters
+        ----------
+        identifier : str
+            string to identify the vessel.
+        diameter : float
+            vessel diameter (mm)
+        origin : np.ndarray
+            cartesian coordinates of the vessel origin (mm)
+        volume_percent : float
+            volume contribution of the vessel (fraction of 1)
+        dchi : float
+            susceptibility difference between the vessel and the surrounding tissue (cgs units)
+        permeation_probability : float
+            probability for a spin to permeate through the vesel wall (fraction of 1)
+        """
+
+        # create vessel identifier in char array format (for Numba)
+        id_encoded = np.frombuffer(identifier.encode(),dtype='uint8')
+    
+        return Sphere3DNumba(
+            identifier=id_encoded,
+            diameter=diameter,
+            origin=origin, 
+            volume_percent=volume_percent, 
+            dchi=dchi, 
+            permeation_probability=permeation_probability 
+        )
+
+    @staticmethod
+    def from_random(
+        diameter: float, 
+        dchi: float,
+        voxel_size: float,
+        permeation_probability: float=0,
+        identifier: str='None',
+        rng = np.random.default_rng()
+    ) -> InfiniteCylinder3DNumba:
+
+        # generate a random point in the voxel
+        origin = (rng.random(3) - 0.5) * voxel_size
+
+        # calculate the estimated volume percent of the generated vessel
+        total_volume = voxel_size**3
+        sphere_volume = 4 / 3 * np.pi * (diameter / 2)**3
+        volume_percent = sphere_volume / total_volume
+
+        # create vessel identifier in char array format (for Numba)
+        id_encoded = np.frombuffer(identifier.encode(),dtype='uint8')
+
+        permeation_probability = 0.0 #no IV contribution added, defaults to 0
+
+        # return vessel object with the generated components
+        return Sphere3DNumba(
+            id_encoded,
+            diameter,
+            origin,
+            volume_percent,
+            dchi,
+            permeation_probability
+        )
+
+Vessel3D = Union[InfiniteCylinder3DNumba, Sphere3DNumba]
+Vessel2D = InfiniteCylinder2DNumba

@@ -5,43 +5,46 @@ import numpy as np
 import datetime
 from typing import Optional, List
 
-#TODO:
-# 2D-FFT-MC #FIXME incorrect equation for 2D FFT
-# 2D-FFT-MC-VAN ~~~not tested
-#
-#DONE:
-# 3D-ANA-MC
-# 3D-ANA-MC-GRD
-# 3D-FFT-MC
-# 3D-FFT-MC-VAN ~~~not tested
-#
-# 2D-ANA-MC
-# 2D-ANA-MC-GRD
-# 2D-ANA-DD
-
-
-
 class SimulationContinuous3D:
 
     def __init__(
         self,
         parameters: BOLDparameters.ParametersContinuous3D,
         IV: bool=True,
+        vessels: Optional[List[BOLDvessel.Vessel3D]] = None,
         voxelseed: int=None,
-        spinseed: int=None
+        spinseed: int=None,
+        progressbar: bool=True
     ):
         self.IV = IV
         self.voxelseed = voxelseed
         self.spinseed = spinseed
 
         self.parameters = parameters
+        self.progressbar = progressbar
 
         self.validate_parameters(parameters)
 
-        self.voxel = BOLDvoxel.Voxel3D(
-            size=self.parameters.size, 
-            seed=self.voxelseed
-        )
+        if vessels is None:
+            self.voxel = BOLDvoxel.Voxel3D.from_random(
+                size=parameters.size,
+                CBV=self.parameters.CBV,
+                identifiers=self.parameters.identifiers,
+                id_weights=self.parameters.id_weights,
+                id_diameters=self.parameters.id_diameters,
+                id_dchis=self.parameters.id_dchis,
+                id_permeation_probabilities=self.parameters.id_permeation_probabilities,
+                vessel_type=self.parameters.vessel_type,
+                allow_vessel_intersection=self.parameters.allow_vessel_intersection,
+                seed=voxelseed,
+                progressbar=self.progressbar
+            )
+        else:
+            self.voxel = BOLDvoxel.Voxel3D(
+                size=parameters.size,
+                vessels=vessels,
+                seed=None
+            )
         
         self.spins = BOLDspins.SpinsContinuous3D(
             ADC=self.parameters.ADC,
@@ -67,34 +70,14 @@ class SimulationContinuous3D:
 
     def signal_simulation(
         self,
-        cplx: bool=False,
-        progressbar: bool=True,
-        vessels: Optional[List[BOLDvessel.Vessel3D]] = None
+        cplx: bool=False,        
     ):
-        start = datetime.datetime.now()
-
-        if vessels is None:
-            self.voxel.random_populate(
-                CBV=self.parameters.CBV,
-                identifiers=self.parameters.identifiers,
-                id_weights=self.parameters.id_weights,
-                id_diameters=self.parameters.id_diameters,
-                id_dchis=self.parameters.id_dchis,
-                id_permeation_probabilities=self.parameters.id_permeation_probabilities,
-                vessel_type=self.parameters.vessel_type,
-                allow_vessel_intersection=self.parameters.allow_vessel_intersection,
-                progressbar=progressbar
-            )
-        else:
-            self.voxel.vessels = vessels
 
         self.spins.random_walk(
             voxel=self.voxel, 
-            IV=self.IV, 
-            progressbar=progressbar
+            IV=self.IV,
+            progressbar=self.progressbar
         )
-
-        self.spins.sample_region(voxel=self.voxel)
 
         signal = self.sequence.signal(
             phase=self.spins.phase,
@@ -106,13 +89,10 @@ class SimulationContinuous3D:
             cplx=cplx
         )
 
-        end = datetime.datetime.now()
-
         time_range = np.arange(0, self.parameters.num_dt * self.parameters.dt +
                          self.parameters.dt, self.parameters.dt)
-        simulation_time = end - start
 
-        return signal, time_range, simulation_time
+        return signal, time_range
 
     def validate_parameters(
         self,
@@ -137,11 +117,7 @@ class SimulationDiscrete3D:
         self.parameters = parameters
         self.validate_parameters(parameters)
 
-        self.grid = BOLDgrid.Grid3D(
-            B0=self.parameters.B0,
-            dt=self.parameters.dt,
-            N=self.parameters.N
-        )
+        self.grid = None
         
         self.spins = BOLDspins.SpinsDiscrete3D(
             ADC=self.parameters.ADC,
@@ -164,8 +140,7 @@ class SimulationDiscrete3D:
             T1IV=self.parameters.T1IV           
         )
 
-        #potentially unused, but it is a light structure if not populated
-        self.voxel = BOLDvoxel.Voxel3D(size=self.parameters.size, seed=voxelseed)
+        self.voxel = None
 
 
     def signal_simulation(
@@ -177,12 +152,11 @@ class SimulationDiscrete3D:
         vessels: Optional[List[BOLDvessel.Vessel3D]] = None,
         extend: bool=False
     ):
-
-        start = datetime.datetime.now()
     
         if offset_method in ('AnalyticalFromVoxel', 'FFTFromVoxel'):
             if vessels is None:
-                self.voxel.random_populate(
+                self.voxel = BOLDvoxel.Voxel3D.from_random(
+                    size=self.parameters.size,
                     CBV=self.parameters.CBV,
                     identifiers=self.parameters.identifiers,
                     id_weights=self.parameters.id_weights,
@@ -191,34 +165,46 @@ class SimulationDiscrete3D:
                     id_permeation_probabilities=self.parameters.id_permeation_probabilities,
                     vessel_type=self.parameters.vessel_type,
                     allow_vessel_intersection=self.parameters.allow_vessel_intersection,
+                    seed=self.voxelseed,
                     progressbar=progressbar
                 )
             else:
-                self.voxel.vessels = vessels
+                self.voxel = BOLDvoxel.Voxel3D(
+                    size=self.parameters.size,
+                    vessels=vessels
+                )
 
         if offset_method == 'AnalyticalFromVoxel':
-            self.grid.populate(
-                mode=offset_method,
+            self.grid = BOLDgrid.Grid3D.from_voxel_analytical(
+                B0=self.parameters.B0,
+                dt=self.parameters.dt,
+                N=self.parameters.N,
                 voxel=self.voxel,
                 progressbar=progressbar
             )
         elif offset_method == 'FFTFromVoxel':
-            self.grid.populate(
-                mode=offset_method,
-                padding=self.parameters.padding,
+            self.grid = BOLDgrid.Grid3D.from_voxel_FFT(
+                B0=self.parameters.B0,
+                dt=self.parameters.dt,
+                N=self.parameters.N,
                 voxel=self.voxel,
-                progressbar=progressbar, 
-                extend=extend
-                )
-        elif offset_method == 'FFTFromFile':
-            self.grid.populate(
-                mode=offset_method,
-                size=self.parameters.size,
+                extend=extend,
                 padding=self.parameters.padding,
-                id_permeation_probabilities=self.parameters.id_permeation_probabilities,
-                id_dchis=self.parameters.id_dchis,
-                file=file, 
                 progressbar=progressbar
+            )
+        elif offset_method == 'FFTFromFile':
+
+            dchi_list = [self.parameters.id_dchis[str(i)] for i in len(self.parameters.id_dchis)]
+            permeation_probability_list = [self.parameters.id_permeation_probabilities[str(i)] for i in len(self.parameters.id_permeation_probabilities)]
+
+            self.grid = BOLDgrid.Grid3D.from_file_FFT(
+                filepath=file, 
+                dchi_list=dchi_list,
+                permeation_probability_list=permeation_probability_list,
+                size=self.parameters.size,
+                dt=self.parameters.dt,
+                B0=self.parameters.B0,
+                padding=self.parameters.padding
             )
 
         else:
@@ -237,13 +223,10 @@ class SimulationDiscrete3D:
             cplx=cplx
         )
 
-        end = datetime.datetime.now()
-
         time_range = np.arange(0, self.parameters.num_dt * self.parameters.dt +
                          self.parameters.dt, self.parameters.dt)
-        simulation_time = end - start
 
-        return signal, time_range, simulation_time
+        return signal, time_range
 
     def validate_parameters(
         self,

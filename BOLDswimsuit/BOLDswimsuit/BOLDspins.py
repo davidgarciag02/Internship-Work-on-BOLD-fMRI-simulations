@@ -179,6 +179,8 @@ class SpinsContinuous3D:
             # new position becomes the previous position
             previous_position = new_position
             previous_is_IV_vsl = new_is_IV_vsl
+        
+        self.sample_region(voxel=voxel)
 
     def dBz_fix(
         self,
@@ -721,7 +723,7 @@ class SpinsContinuous2D:
         self.sample = np.concatenate(
             (np.ones((self.num_spins, 1)), 1 * np.all(np.abs(self.positions) <= sample_size, 2)), 1)
 
-class SpinsDiscrete2D:
+class SpinsDiscrete2D:  
 
     def __init__(
         self,
