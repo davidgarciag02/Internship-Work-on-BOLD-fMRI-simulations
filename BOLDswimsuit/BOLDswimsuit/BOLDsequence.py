@@ -1,6 +1,7 @@
 import numpy as np
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Union
 from .BOLDconstants import *
+from . import BOLDspins
 
 class Sequence:
 
@@ -31,8 +32,23 @@ class Sequence:
         self.My = None
         self.Mz = None
 
+    def signal_from_spins(
+        self,
+        spins: Union[BOLDspins.SpinsContinuous2D, BOLDspins.SpinsContinuous3D, BOLDspins.SpinsDiscrete2D, BOLDspins.SpinsDiscrete3D],
+        cplx: bool=False
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
-    def signal(
+        return self.signal_from_sample(
+            phase=spins.phase,
+            is_IV=spins.is_IV,
+            num_samples=spins.num_spins,
+            num_dt=spins.num_dt,
+            dt=spins.dt,
+            sample_mask=spins.sample,
+            cplx=cplx
+        )
+
+    def signal_from_sample(
         self,
         phase: np.ndarray,
         is_IV: np.ndarray,
