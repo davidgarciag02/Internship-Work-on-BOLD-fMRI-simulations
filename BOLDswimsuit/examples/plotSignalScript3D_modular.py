@@ -1,11 +1,11 @@
 #Importing relevant packages
-from BOLDswimsuit import BOLDvoxel, BOLDspins, BOLDsequence
+from BOLDswimsuite import BOLDvoxel, BOLDspins, BOLDsequence
 import numpy as np
 import matplotlib.pyplot as plt
 
 def main():
 
-    vessel_diameter = 0.02
+    vessel_diameter = 0.002
     size = 20 * vessel_diameter
     
     voxel = BOLDvoxel.Voxel3D.from_random(
@@ -15,7 +15,7 @@ def main():
         id_weights={'vsl1':1},
         id_diameters={'vsl1':[vessel_diameter]},
         id_dchis={'vsl1':3e-8},
-        id_permeation_probabilities={'vsl1':0.5},
+        id_permeation_probabilities={'vsl1':0},
         vessel_type='cylinder',
         allow_vessel_intersection=True,
         seed=None,
@@ -25,7 +25,7 @@ def main():
     spins = BOLDspins.SpinsContinuous3D(
         ADC=0.001,
         B0=3,
-        num_spins=100_000,
+        num_spins=10_000,
         num_dt=600,
         dt=0.2,
         edge_width=0,
@@ -50,13 +50,8 @@ def main():
         T1IV=None           
     )
 
-    signal = sequence.signal(
-        phase=spins.phase,
-        is_IV=spins.is_IV,
-        num_samples=spins.num_spins,
-        num_dt=spins.num_dt,
-        dt=spins.dt,
-        sample_mask=spins.sample,
+    signal = sequence.signal_from_spins(
+        spins=spins,
         cplx=False
     )
 

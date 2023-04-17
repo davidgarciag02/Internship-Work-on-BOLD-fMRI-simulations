@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BOLDswimsuite.BOLDparameters &mdash; BOLDswimsuite  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            BOLDswimsuite
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">BOLDswimsuit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">BOLDswimsuite</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">BOLDswimsuite.BOLDparameters</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for BOLDswimsuite.BOLDparameters</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">InitVar</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<div class="viewcode-block" id="ParametersContinuous3D"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDparameters.ParametersContinuous3D">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">ParametersContinuous3D</span><span class="p">:</span>
+
+    <span class="c1"># VOXEL PARAMETERS</span>
+    
+    <span class="c1">#shape of the vessel</span>
+    <span class="n">vessel_type</span><span class="p">:</span> <span class="nb">str</span>  
+    <span class="c1">#cerebral blood volume (% ratio)</span>
+    <span class="n">CBV</span><span class="p">:</span> <span class="nb">float</span>   
+
+    <span class="c1"># VESSEL PARAMETERS</span>
+
+    <span class="c1">#identifiers of vessels, simply used as keys to dictionaries</span>
+    <span class="n">identifiers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="c1">#weight of each vessel id for the total CBV</span>
+    <span class="n">id_weights</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+    <span class="c1">#vessel diameter distribution of each id (mm)</span>
+    <span class="n">id_diameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>
+    <span class="c1">#susceptibility difference (vessel to tissue) of each id in cgs</span>
+    <span class="n">id_dchis</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+    <span class="c1">#permeation probability of each id</span>
+    <span class="n">id_permeation_probabilities</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+
+    <span class="c1"># SPIN PARAMETERS</span>
+
+    <span class="c1">#diffusion length (mm^2/s)</span>
+    <span class="n">ADC</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="c1">#magnetic field strength (T) </span>
+    <span class="n">B0</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="c1">#time step (ms)</span>
+    <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="c1">#number of time steps</span>
+    <span class="n">num_dt</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="c1">#number of spins</span>
+    <span class="n">num_spins</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="c1"># SEQUENCE PARAMETERS</span>
+
+    <span class="c1">#pulse time indices (first pulse always at 0)</span>
+    <span class="n">pulse_time_indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="c1">#list of angle of each pulse (radians)</span>
+    <span class="n">pulse_angles</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="c1">#pulse axes in polar coordinates (radians) list of [phi,theta]</span>
+    <span class="n">pulse_axes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>
+
+    <span class="c1"># OPTIONAL PARAMETERS</span>
+    
+    <span class="c1">#voxel edge length (mm), calculated from &lt;k&gt; value if set to None     </span>
+    <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>    
+    <span class="c1">#voxel size to largest radius ratio, used to calculate &lt;size&gt; if &lt;size&gt; is set to None</span>
+    <span class="n">k</span><span class="p">:</span> <span class="n">InitVar</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#sampling region border width (as a fraction of the space - must be 0 &lt;= edgeWidth &lt; 0.5)</span>
+    <span class="n">edge_width</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1">#whether to check for vessel intersection during voxel generation</span>
+    <span class="n">allow_vessel_intersection</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>  
+    <span class="c1">#intravascular T1 value in ms, ignored if set to None</span>
+    <span class="n">T1IV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#intravascular T2 value in ms, ignored if set to None</span>
+    <span class="n">T2IV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#extravascular T1 value in ms, ignored if set to None</span>
+    <span class="n">T1EV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#extravascular T2 value in ms, ignored if set to None</span>
+    <span class="n">T2EV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#dB1 offset as a fraction of the dephasing angle</span>
+    <span class="n">dB1fact</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="c1">#dB0 offset in T</span>
+    <span class="n">dB0</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Post initialization procedures</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># If &quot;k&quot; is given and &quot;size&quot; is None, will calculate the size from the</span>
+        <span class="c1"># Boxerman equation.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">k</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            
+            <span class="n">diam</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id_diameters</span><span class="p">[</span><span class="n">idn</span><span class="p">])</span> <span class="k">for</span> <span class="n">idn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">identifiers</span><span class="p">])</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ADC</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">A</span> <span class="o">+</span> <span class="n">k</span> <span class="o">*</span> <span class="n">diam</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ParametersDiscrete3D"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDparameters.ParametersDiscrete3D">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">ParametersDiscrete3D</span><span class="p">:</span>
+
+    <span class="c1"># VOXEL PARAMETERS</span>
+    
+    <span class="c1">#shape of the vessel </span>
+    <span class="n">vessel_type</span><span class="p">:</span> <span class="nb">str</span>   
+    <span class="c1">#cerebral blood volume (% ratio)</span>
+    <span class="n">CBV</span><span class="p">:</span> <span class="nb">float</span>
+
+    <span class="c1"># VESSEL PARAMETERS</span>
+
+    <span class="c1">#identifiers of vessels, simply used as keys to dictionaries</span>
+    <span class="n">identifiers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="c1">#weight of each vessel id for the total CBV</span>
+    <span class="n">id_weights</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">int</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span>
+    <span class="c1">#vessel diameter distribution of each id (mm)</span>
+    <span class="n">id_diameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>
+    <span class="c1">#susceptibility difference (vessel to tissue) of each id in cgs</span>
+    <span class="n">id_dchis</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">int</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span>
+    <span class="c1">#permeation probability of each id</span>
+    <span class="n">id_permeation_probabilities</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">int</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span>
+
+    <span class="c1">#GRID PARAMETERS</span>
+
+    <span class="c1">#grid size, for cubic grid-bound simulations</span>
+    <span class="n">N</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="c1"># SPIN PARAMETERS</span>
+
+    <span class="c1">#diffusion length (mm^2/s)</span>
+    <span class="n">ADC</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="c1">#magnetic field strength (T) </span>
+    <span class="n">B0</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="c1">#time step (ms)</span>
+    <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="c1">#number of time steps</span>
+    <span class="n">num_dt</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="c1">#number of spins</span>
+    <span class="n">num_spins</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="c1"># SIGNAL PARAMETERS</span>
+
+    <span class="c1">#pulse time indices (first pulse always at 0)</span>
+    <span class="n">pulse_time_indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="c1">#list of angle of each pulse (radians)</span>
+    <span class="n">pulse_angles</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="c1">#pulse axes in polar coordinates (radians) list of [phi,theta]</span>
+    <span class="n">pulse_axes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>
+
+    <span class="c1"># OPTIONAL PARAMETERS</span>
+
+    <span class="c1">#padding when performing the FFT convolution (not used otherwise)</span>
+    <span class="n">padding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1">#voxel edge length (mm), calculated from &lt;k&gt; value if set to None     </span>
+    <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#voxel size to largest radius ratio, used to calculate &lt;size&gt; if &lt;size&gt; is set to None</span>
+    <span class="n">k</span><span class="p">:</span> <span class="n">InitVar</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#sampling region border width (as a fraction of the space - must be 0 &lt;= edgeWidth &lt; 0.5)</span>
+    <span class="n">edge_width</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1">#whether to check for vessel intersection during voxel generation</span>
+    <span class="n">allow_vessel_intersection</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>  
+    <span class="c1">#intravascular T1 value in ms, ignored if set to None</span>
+    <span class="n">T1IV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#intravascular T2 value in ms, ignored if set to None</span>
+    <span class="n">T2IV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#extravascular T1 value in ms, ignored if set to None</span>
+    <span class="n">T1EV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#extravascular T2 value in ms, ignored if set to None</span>
+    <span class="n">T2EV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#dB1 offset as a fraction of the dephasing angle</span>
+    <span class="n">dB1fact</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="c1">#dB0 offset in T</span>
+    <span class="n">dB0</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Post initialization procedures</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># If &quot;k&quot; is given and &quot;size&quot; is None, will calculate the size from the</span>
+        <span class="c1"># Boxerman equation.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">k</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            
+            <span class="n">diam</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id_diameters</span><span class="p">[</span><span class="n">idn</span><span class="p">])</span> <span class="k">for</span> <span class="n">idn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">identifiers</span><span class="p">])</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ADC</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">A</span> <span class="o">+</span> <span class="n">k</span> <span class="o">*</span> <span class="n">diam</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ParametersContinuous2D"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDparameters.ParametersContinuous2D">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">ParametersContinuous2D</span><span class="p">:</span>
+
+    <span class="c1"># VOXEL PARAMETERS</span>
+    
+    <span class="c1">#shape of the vessel </span>
+    <span class="n">vessel_type</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#cerebral blood volume (% ratio)</span>
+    <span class="n">CBV</span><span class="p">:</span> <span class="nb">float</span>
+
+    <span class="c1"># VESSEL PARAMETERS</span>
+
+    <span class="c1">#identifiers of vessels, simply used as keys to dictionaries</span>
+    <span class="n">identifiers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="c1">#weight of each vessel id for the total CBV</span>
+    <span class="n">id_weights</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+    <span class="c1">#vessel diameter distribution of each id (mm)</span>
+    <span class="n">id_diameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>
+    <span class="c1">#susceptibility difference (vessel to tissue) of each id in cgs</span>
+    <span class="n">id_dchis</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+    <span class="c1">#permeation probability of each id</span>
+    <span class="n">id_permeation_probabilities</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+
+    <span class="c1"># SPIN PARAMETERS</span>
+
+    <span class="c1">#diffusion length (mm^2/s)</span>
+    <span class="n">ADC</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="c1">#magnetic field strength (T)</span>
+    <span class="n">B0</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="c1">#time step (ms)</span>
+    <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="c1">#number of time steps</span>
+    <span class="n">num_dt</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="c1">#number of spins (MC)</span>
+    <span class="n">num_spins</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="c1"># SIGNAL PARAMETERS</span>
+
+    <span class="c1">#pulse time indices (first pulse always at 0)</span>
+    <span class="n">pulse_time_indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="c1">#list of angle of each pulse (radians)</span>
+    <span class="n">pulse_angles</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="c1">#pulse axes in polar coordinates (radians) list of [phi,theta]</span>
+    <span class="n">pulse_axes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>
+
+    <span class="c1"># OPTIONAL PARAMETERS</span>
+
+    <span class="c1">#voxel edge length (mm), calculated from &lt;k&gt; value if set to None     </span>
+    <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>     
+    <span class="c1">#number of vessels</span>
+    <span class="n">num_vessels</span><span class="p">:</span> <span class="n">InitVar</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#sampling region border width (as a fraction of the space - must be 0 &lt;= edgeWidth &lt; 0.5)</span>
+    <span class="n">edge_width</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1">#whether to check for vessel intersection during voxel generation</span>
+    <span class="n">allow_vessel_intersection</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>  
+    <span class="c1">#intravascular T1 value in ms, ignored if set to None</span>
+    <span class="n">T1IV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#intravascular T2 value in ms, ignored if set to None</span>
+    <span class="n">T2IV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#extravascular T1 value in ms, ignored if set to None</span>
+    <span class="n">T1EV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#extravascular T2 value in ms, ignored if set to None</span>
+    <span class="n">T2EV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="c1">#dB1 offset as a fraction of the dephasing angle</span>
+    <span class="n">dB1fact</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="c1">#dB0 offset in T</span>
+    <span class="n">dB0</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_vessels</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Post initialization procedures</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># If &quot;k&quot; is given and &quot;size&quot; is None, will calculate the size from the</span>
+        <span class="c1"># Boxerman equation.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">num_vessels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">diam</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id_diameters</span><span class="p">[</span><span class="n">idn</span><span class="p">])</span> <span class="k">for</span> <span class="n">idn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">identifiers</span><span class="p">])</span>
+
+            <span class="n">vsl_area</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">diam</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">vsl_area</span><span class="o">*</span><span class="n">num_vessels</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">CBV</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ParametersDiscrete2D"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDparameters.ParametersDiscrete2D">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">ParametersDiscrete2D</span><span class="p">:</span>
+
+    <span class="c1"># VOXEL PARAMETERS</span>
+    
+    <span class="c1">#shape of the vessel </span>
+    <span class="n">vessel_type</span><span class="p">:</span> <span class="nb">str</span>   
+    <span class="c1">#cerebral blood volume (% ratio)</span>
+    <span class="n">CBV</span><span class="p">:</span> <span class="nb">float</span>
+
+    <span class="c1"># VESSEL PARAMETERS</span>
+
+    <span class="c1">#identifiers of vessels, simply used as keys to dictionaries</span>
+    <span class="n">identifiers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="c1">#weight of each vessel id for the total CBV</span>
+    <span class="n">id_weights</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">int</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span>
+    <span class="c1">#vessel diameter distribution of each id (mm)</span>
+    <span class="n">id_diameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>
+    <span class="c1">#susceptibility difference (vessel to tissue) of each id in cgs</span>
+    <span class="n">id_dchis</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">int</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span>
+    <span class="c1">#permeation probability of each id</span>
+    <span class="n">id_permeation_probabilities</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">int</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span>
+
+    <span class="c1">#GRID PARAMETERS</span>
+
+    <span class="c1">#grid size, for cubic grid-bound simulations</span>
+    <span class="n">N</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="c1"># SPIN PARAMETERS</span>
+
+    <span class="c1">#diffusion length (mm^2/s)</span>
+    <span class="n">ADC</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="c1">#magnetic field strength (T) </span>
+    <span class="n">B0</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="c1">#time step (ms)</span>
+    <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="c1">#number of time steps</span>
+    <span class="n">num_dt</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="c1">#number of spins</span>
+    <span class="n">num_spins</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="c1"># SIGNAL PARAMETERS</span>
+
+    <span class="c1">#pulse time indices (first pulse always at 0)</span>
+    <span class="n">pulse_time_indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="c1">#list of angle of each pulse (radians)</span>
+    <span class="n">pulse_angles</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="c1">#pulse axes in polar coordinates (radians) list of [phi,theta]</span>
+    <span class="n">pulse_axes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>
+
+    <span class="c1"># OPTIONAL PARAMETERS</span>
+
+    <span class="c1">#padding when performing the FFT convolution (not used otherwise)</span>
+    <span class="n">padding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1">#voxel edge length (mm), calculated from &lt;k&gt; value if set to None     </span>
+    <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#number of vessels</span>
+    <span class="n">num_vessels</span><span class="p">:</span> <span class="n">InitVar</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#sampling region border width (as a fraction of the space - must be 0 &lt;= edgeWidth &lt; 0.5)</span>
+    <span class="n">edge_width</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1">#whether to check for vessel intersection during voxel generation</span>
+    <span class="n">allow_vessel_intersection</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>  
+    <span class="c1">#intravascular T1 value in ms, ignored if set to None</span>
+    <span class="n">T1IV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#intravascular T2 value in ms, ignored if set to None</span>
+    <span class="n">T2IV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#extravascular T1 value in ms, ignored if set to None</span>
+    <span class="n">T1EV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#extravascular T2 value in ms, ignored if set to None</span>
+    <span class="n">T2EV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#dB1 offset as a fraction of the dephasing angle</span>
+    <span class="n">dB1fact</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="c1">#dB0 offset in T</span>
+    <span class="n">dB0</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_vessels</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Post initialization procedures</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># If &quot;k&quot; is given and &quot;size&quot; is None, will calculate the size from the</span>
+        <span class="c1"># Boxerman equation.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">num_vessels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">diam</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id_diameters</span><span class="p">[</span><span class="n">idn</span><span class="p">])</span> <span class="k">for</span> <span class="n">idn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">identifiers</span><span class="p">])</span>
+
+            <span class="n">vsl_area</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">diam</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">vsl_area</span><span class="o">*</span><span class="n">num_vessels</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">CBV</span><span class="p">)</span></div>
+
+
+<span class="n">Parameters3D</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">ParametersContinuous3D</span><span class="p">,</span> <span class="n">ParametersDiscrete3D</span><span class="p">]</span>
+<span class="n">Parameters2D</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">ParametersContinuous2D</span><span class="p">,</span> <span class="n">ParametersDiscrete2D</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Jacob Chausse.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

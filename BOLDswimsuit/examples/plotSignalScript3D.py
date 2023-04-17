@@ -1,5 +1,5 @@
 #Importing relevant packages
-from BOLDswimsuit import BOLDsimulation, BOLDparameters
+from BOLDswimsuite import BOLDsimulation, BOLDparameters
 import numpy as np
 import matplotlib.pyplot as plt
 

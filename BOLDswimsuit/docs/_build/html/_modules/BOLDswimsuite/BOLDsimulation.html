@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BOLDswimsuite.BOLDsimulation &mdash; BOLDswimsuite  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            BOLDswimsuite
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">BOLDswimsuit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">BOLDswimsuite</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">BOLDswimsuite.BOLDsimulation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for BOLDswimsuite.BOLDsimulation</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">BOLDparameters</span><span class="p">,</span> <span class="n">BOLDvessel</span><span class="p">,</span> <span class="n">BOLDvoxel</span><span class="p">,</span> <span class="n">BOLDgrid</span><span class="p">,</span> <span class="n">BOLDspins</span><span class="p">,</span> <span class="n">BOLDsequence</span><span class="p">,</span> <span class="n">BOLDdeterministic</span>
+<span class="kn">from</span> <span class="nn">.BOLDconstants</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span>
+
+<div class="viewcode-block" id="SimulationContinuous3D"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDsimulation.SimulationContinuous3D">[docs]</a><span class="k">class</span> <span class="nc">SimulationContinuous3D</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="p">:</span> <span class="n">BOLDparameters</span><span class="o">.</span><span class="n">ParametersContinuous3D</span><span class="p">,</span>
+        <span class="n">IV</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">vessels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">BOLDvessel</span><span class="o">.</span><span class="n">Vessel3D</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">voxelseed</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">spinseed</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">progressbar</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">IV</span> <span class="o">=</span> <span class="n">IV</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">voxelseed</span> <span class="o">=</span> <span class="n">voxelseed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spinseed</span> <span class="o">=</span> <span class="n">spinseed</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">progressbar</span> <span class="o">=</span> <span class="n">progressbar</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_parameters</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">vessels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span> <span class="o">=</span> <span class="n">BOLDvoxel</span><span class="o">.</span><span class="n">Voxel3D</span><span class="o">.</span><span class="n">from_random</span><span class="p">(</span>
+                <span class="n">size</span><span class="o">=</span><span class="n">parameters</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+                <span class="n">CBV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">CBV</span><span class="p">,</span>
+                <span class="n">identifiers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">identifiers</span><span class="p">,</span>
+                <span class="n">id_weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_weights</span><span class="p">,</span>
+                <span class="n">id_diameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_diameters</span><span class="p">,</span>
+                <span class="n">id_dchis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_dchis</span><span class="p">,</span>
+                <span class="n">id_permeation_probabilities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_permeation_probabilities</span><span class="p">,</span>
+                <span class="n">vessel_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">vessel_type</span><span class="p">,</span>
+                <span class="n">allow_vessel_intersection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">allow_vessel_intersection</span><span class="p">,</span>
+                <span class="n">seed</span><span class="o">=</span><span class="n">voxelseed</span><span class="p">,</span>
+                <span class="n">progressbar</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">progressbar</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span> <span class="o">=</span> <span class="n">BOLDvoxel</span><span class="o">.</span><span class="n">Voxel3D</span><span class="p">(</span>
+                <span class="n">size</span><span class="o">=</span><span class="n">parameters</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+                <span class="n">vessels</span><span class="o">=</span><span class="n">vessels</span><span class="p">,</span>
+                <span class="n">seed</span><span class="o">=</span><span class="kc">None</span>
+            <span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">spins</span> <span class="o">=</span> <span class="n">BOLDspins</span><span class="o">.</span><span class="n">SpinsContinuous3D</span><span class="p">(</span>
+            <span class="n">ADC</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">ADC</span><span class="p">,</span>
+            <span class="n">B0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">B0</span><span class="p">,</span>
+            <span class="n">num_spins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_spins</span><span class="p">,</span>
+            <span class="n">num_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
+            <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+            <span class="n">edge_width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">edge_width</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spinseed</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span> <span class="o">=</span> <span class="n">BOLDsequence</span><span class="o">.</span><span class="n">Sequence</span><span class="p">(</span>
+            <span class="n">pulse_time_indices</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pulse_time_indices</span><span class="p">,</span>
+            <span class="n">pulse_angles</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pulse_angles</span><span class="p">,</span>
+            <span class="n">pulse_axes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pulse_axes</span><span class="p">,</span>
+            <span class="n">dB0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dB0</span><span class="p">,</span>
+            <span class="n">dB1fact</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dB1fact</span><span class="p">,</span>
+            <span class="n">T2EV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T2EV</span><span class="p">,</span>
+            <span class="n">T2IV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T2IV</span><span class="p">,</span>
+            <span class="n">T1EV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T1EV</span><span class="p">,</span>
+            <span class="n">T1IV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T1IV</span>           
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="SimulationContinuous3D.signal_simulation"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDsimulation.SimulationContinuous3D.signal_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">signal_simulation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cplx</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>        
+    <span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">random_walk</span><span class="p">(</span>
+            <span class="n">voxel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="p">,</span> 
+            <span class="n">IV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">IV</span><span class="p">,</span>
+            <span class="n">progressbar</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">progressbar</span>
+        <span class="p">)</span>
+
+        <span class="n">signal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span>
+            <span class="n">phase</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">phase</span><span class="p">,</span>
+            <span class="n">is_IV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">is_IV</span><span class="p">,</span>
+            <span class="n">num_samples</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">num_spins</span><span class="p">,</span>
+            <span class="n">num_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
+            <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+            <span class="n">sample_mask</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">sample</span><span class="p">,</span>
+            <span class="n">cplx</span><span class="o">=</span><span class="n">cplx</span>
+        <span class="p">)</span>
+
+        <span class="n">time_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_dt</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span> <span class="o">+</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">signal</span><span class="p">,</span> <span class="n">time_range</span></div>
+
+<div class="viewcode-block" id="SimulationContinuous3D.validate_parameters"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDsimulation.SimulationContinuous3D.validate_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">validate_parameters</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="p">:</span> <span class="n">BOLDparameters</span><span class="o">.</span><span class="n">ParametersContinuous3D</span>
+    <span class="p">):</span>
+        <span class="c1">#TODO add validation</span>
+        <span class="k">pass</span></div></div>
+
+<div class="viewcode-block" id="SimulationDiscrete3D"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDsimulation.SimulationDiscrete3D">[docs]</a><span class="k">class</span> <span class="nc">SimulationDiscrete3D</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="p">:</span> <span class="n">BOLDparameters</span><span class="o">.</span><span class="n">ParametersDiscrete3D</span><span class="p">,</span>
+        <span class="n">IV</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">voxelseed</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">spinseed</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">IV</span> <span class="o">=</span> <span class="n">IV</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">voxelseed</span> <span class="o">=</span> <span class="n">voxelseed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spinseed</span> <span class="o">=</span> <span class="n">spinseed</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_parameters</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">spins</span> <span class="o">=</span> <span class="n">BOLDspins</span><span class="o">.</span><span class="n">SpinsDiscrete3D</span><span class="p">(</span>
+            <span class="n">ADC</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">ADC</span><span class="p">,</span>
+            <span class="n">B0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">B0</span><span class="p">,</span>
+            <span class="n">num_spins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_spins</span><span class="p">,</span>
+            <span class="n">num_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
+            <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+            <span class="n">edge_width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">edge_width</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">spinseed</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span> <span class="o">=</span> <span class="n">BOLDsequence</span><span class="o">.</span><span class="n">Sequence</span><span class="p">(</span>
+            <span class="n">pulse_time_indices</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pulse_time_indices</span><span class="p">,</span>
+            <span class="n">pulse_angles</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pulse_angles</span><span class="p">,</span>
+            <span class="n">pulse_axes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pulse_axes</span><span class="p">,</span>
+            <span class="n">dB0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dB0</span><span class="p">,</span>
+            <span class="n">dB1fact</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dB1fact</span><span class="p">,</span>
+            <span class="n">T2EV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T2EV</span><span class="p">,</span>
+            <span class="n">T2IV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T2IV</span><span class="p">,</span>
+            <span class="n">T1EV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T1EV</span><span class="p">,</span>
+            <span class="n">T1IV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T1IV</span>           
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="SimulationDiscrete3D.signal_simulation"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDsimulation.SimulationDiscrete3D.signal_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">signal_simulation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">offset_method</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;AnalyticalFromVoxel&#39;</span><span class="p">,</span>
+        <span class="n">cplx</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">progressbar</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">vessels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">BOLDvessel</span><span class="o">.</span><span class="n">Vessel3D</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">extend</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
+    
+        <span class="k">if</span> <span class="n">offset_method</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;AnalyticalFromVoxel&#39;</span><span class="p">,</span> <span class="s1">&#39;FFTFromVoxel&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">vessels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span> <span class="o">=</span> <span class="n">BOLDvoxel</span><span class="o">.</span><span class="n">Voxel3D</span><span class="o">.</span><span class="n">from_random</span><span class="p">(</span>
+                    <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+                    <span class="n">CBV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">CBV</span><span class="p">,</span>
+                    <span class="n">identifiers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">identifiers</span><span class="p">,</span>
+                    <span class="n">id_weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_weights</span><span class="p">,</span>
+                    <span class="n">id_diameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_diameters</span><span class="p">,</span>
+                    <span class="n">id_dchis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_dchis</span><span class="p">,</span>
+                    <span class="n">id_permeation_probabilities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_permeation_probabilities</span><span class="p">,</span>
+                    <span class="n">vessel_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">vessel_type</span><span class="p">,</span>
+                    <span class="n">allow_vessel_intersection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">allow_vessel_intersection</span><span class="p">,</span>
+                    <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">voxelseed</span><span class="p">,</span>
+                    <span class="n">progressbar</span><span class="o">=</span><span class="n">progressbar</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span> <span class="o">=</span> <span class="n">BOLDvoxel</span><span class="o">.</span><span class="n">Voxel3D</span><span class="p">(</span>
+                    <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+                    <span class="n">vessels</span><span class="o">=</span><span class="n">vessels</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">offset_method</span> <span class="o">==</span> <span class="s1">&#39;AnalyticalFromVoxel&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="n">BOLDgrid</span><span class="o">.</span><span class="n">Grid3D</span><span class="o">.</span><span class="n">from_voxel_analytical</span><span class="p">(</span>
+                <span class="n">B0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">B0</span><span class="p">,</span>
+                <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                <span class="n">N</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">N</span><span class="p">,</span>
+                <span class="n">voxel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="p">,</span>
+                <span class="n">progressbar</span><span class="o">=</span><span class="n">progressbar</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">offset_method</span> <span class="o">==</span> <span class="s1">&#39;FFTFromVoxel&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="n">BOLDgrid</span><span class="o">.</span><span class="n">Grid3D</span><span class="o">.</span><span class="n">from_voxel_FFT</span><span class="p">(</span>
+                <span class="n">B0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">B0</span><span class="p">,</span>
+                <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                <span class="n">N</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">N</span><span class="p">,</span>
+                <span class="n">voxel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="p">,</span>
+                <span class="n">extend</span><span class="o">=</span><span class="n">extend</span><span class="p">,</span>
+                <span class="n">padding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span>
+                <span class="n">progressbar</span><span class="o">=</span><span class="n">progressbar</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">offset_method</span> <span class="o">==</span> <span class="s1">&#39;FFTFromFile&#39;</span><span class="p">:</span>
+
+            <span class="n">dchi_list</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_dchis</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_dchis</span><span class="p">)]</span>
+            <span class="n">permeation_probability_list</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_permeation_probabilities</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_permeation_probabilities</span><span class="p">)]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="n">BOLDgrid</span><span class="o">.</span><span class="n">Grid3D</span><span class="o">.</span><span class="n">from_file_FFT</span><span class="p">(</span>
+                <span class="n">filepath</span><span class="o">=</span><span class="n">file</span><span class="p">,</span> 
+                <span class="n">dchi_list</span><span class="o">=</span><span class="n">dchi_list</span><span class="p">,</span>
+                <span class="n">permeation_probability_list</span><span class="o">=</span><span class="n">permeation_probability_list</span><span class="p">,</span>
+                <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+                <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                <span class="n">B0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">B0</span><span class="p">,</span>
+                <span class="n">padding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">padding</span>
+            <span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Offset method </span><span class="se">\&#39;</span><span class="si">{</span><span class="n">offset_method</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1"> is not valid!&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">random_walk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">IV</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span> <span class="n">progressbar</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">sample_region</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">)</span>
+        
+        <span class="n">signal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span>
+            <span class="n">phase</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">phase</span><span class="p">,</span>
+            <span class="n">is_IV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">is_IV</span><span class="p">,</span>
+            <span class="n">num_samples</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">num_spins</span><span class="p">,</span>
+            <span class="n">num_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
+            <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+            <span class="n">sample_mask</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">sample</span><span class="p">,</span>
+            <span class="n">cplx</span><span class="o">=</span><span class="n">cplx</span>
+        <span class="p">)</span>
+
+        <span class="n">time_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_dt</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span> <span class="o">+</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">signal</span><span class="p">,</span> <span class="n">time_range</span></div>
+
+<div class="viewcode-block" id="SimulationDiscrete3D.validate_parameters"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDsimulation.SimulationDiscrete3D.validate_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">validate_parameters</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="p">:</span> <span class="n">BOLDparameters</span><span class="o">.</span><span class="n">ParametersDiscrete3D</span>
+    <span class="p">):</span>
+        <span class="c1">#TODO add validation</span>
+        <span class="k">pass</span></div></div>
+
+<div class="viewcode-block" id="SimulationContinuous2D"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDsimulation.SimulationContinuous2D">[docs]</a><span class="k">class</span> <span class="nc">SimulationContinuous2D</span><span class="p">:</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="p">:</span> <span class="n">BOLDparameters</span><span class="o">.</span><span class="n">ParametersContinuous2D</span><span class="p">,</span>
+        <span class="n">IV</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">voxelseed</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">spinseed</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">parameters</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_parameters</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">IV</span><span class="o">=</span><span class="n">IV</span> <span class="c1">#not used for deterministic</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">voxelseed</span> <span class="o">=</span> <span class="n">voxelseed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spinseed</span> <span class="o">=</span> <span class="n">spinseed</span> <span class="c1">#not used for deterministic</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">parameters</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span> <span class="o">=</span> <span class="n">BOLDvoxel</span><span class="o">.</span><span class="n">Voxel2D</span><span class="p">(</span>
+            <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">voxelseed</span>
+        <span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">=</span><span class="n">BOLDspins</span><span class="o">.</span><span class="n">SpinsContinuous2D</span><span class="p">(</span>
+            <span class="n">ADC</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">ADC</span><span class="p">,</span>
+            <span class="n">B0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">B0</span><span class="p">,</span>
+            <span class="n">num_spins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_spins</span><span class="p">,</span>
+            <span class="n">num_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
+            <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+            <span class="n">edge_width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">edge_width</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">spinseed</span>            
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span> <span class="o">=</span> <span class="n">BOLDsequence</span><span class="o">.</span><span class="n">Sequence</span><span class="p">(</span>
+            <span class="n">pulse_time_indices</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pulse_time_indices</span><span class="p">,</span>
+            <span class="n">pulse_angles</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pulse_angles</span><span class="p">,</span>
+            <span class="n">pulse_axes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pulse_axes</span><span class="p">,</span>
+            <span class="n">dB0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dB0</span><span class="p">,</span>
+            <span class="n">dB1fact</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dB1fact</span><span class="p">,</span>
+            <span class="n">T2EV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T2EV</span><span class="p">,</span>
+            <span class="n">T2IV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T2IV</span><span class="p">,</span>
+            <span class="n">T1EV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T1EV</span><span class="p">,</span>
+            <span class="n">T1IV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T1IV</span>           
+        <span class="p">)</span>
+    
+    
+<div class="viewcode-block" id="SimulationContinuous2D.signal_simulation"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDsimulation.SimulationContinuous2D.signal_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">signal_simulation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> 
+        <span class="n">simulation_type</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;MonteCarlo&#39;</span><span class="p">,</span>
+        <span class="n">progressbar</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+        <span class="n">cplx</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">vessels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">BOLDvessel</span><span class="o">.</span><span class="n">Vessel2D</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">vessels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="o">.</span><span class="n">random_populate</span><span class="p">(</span>
+                <span class="n">CBV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">CBV</span><span class="p">,</span>
+                <span class="n">identifiers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">identifiers</span><span class="p">,</span>
+                <span class="n">id_weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_weights</span><span class="p">,</span>
+                <span class="n">id_diameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_diameters</span><span class="p">,</span>
+                <span class="n">id_dchis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_dchis</span><span class="p">,</span>
+                <span class="n">id_permeation_probabilities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_permeation_probabilities</span><span class="p">,</span>
+                <span class="n">vessel_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">vessel_type</span><span class="p">,</span>
+                <span class="n">allow_vessel_intersection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">allow_vessel_intersection</span><span class="p">,</span>
+                <span class="n">progressbar</span><span class="o">=</span><span class="n">progressbar</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="o">.</span><span class="n">vessels</span> <span class="o">=</span> <span class="n">vessels</span>
+
+        <span class="k">if</span> <span class="n">simulation_type</span> <span class="o">==</span> <span class="s1">&#39;MonteCarlo&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">random_walk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">IV</span><span class="p">,</span> <span class="n">progressbar</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">sample_region</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="p">)</span>
+                
+            <span class="n">signal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span>
+                <span class="n">phase</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">phase</span><span class="p">,</span>
+                <span class="n">is_IV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">is_IV</span><span class="p">,</span>
+                <span class="n">num_samples</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_spins</span><span class="p">,</span>
+                <span class="n">num_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
+                <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                <span class="n">sample_mask</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">sample</span><span class="p">,</span>
+                <span class="n">cplx</span><span class="o">=</span><span class="n">cplx</span>
+            <span class="p">)</span>
+        
+        <span class="k">elif</span> <span class="n">simulation_type</span> <span class="o">==</span> <span class="s1">&#39;MonteCarlo3B0&#39;</span><span class="p">:</span>
+
+            <span class="c1">#make vessels perpendicular to B0</span>
+            <span class="k">for</span> <span class="n">vsl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="o">.</span><span class="n">vessels</span><span class="p">:</span>
+                <span class="n">vsl</span><span class="o">.</span><span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span>
+                <span class="n">vsl</span><span class="o">.</span><span class="n">phi</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">random_walk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">IV</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">progressbar</span><span class="p">)</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">phase</span> <span class="o">*=</span> <span class="mi">2</span><span class="o">/</span><span class="mi">3</span>
+
+            <span class="c1">#make vessels parallel</span>
+            <span class="k">for</span> <span class="n">vsl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="o">.</span><span class="n">vessels</span><span class="p">:</span>
+                <span class="n">vsl</span><span class="o">.</span><span class="n">theta</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">vsl</span><span class="o">.</span><span class="n">phi</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="k">for</span> <span class="n">vsl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="o">.</span><span class="n">vessels</span><span class="p">:</span>                
+                <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">phase</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">is_IV_vessel</span> <span class="o">==</span> <span class="n">vsl</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span> <span class="o">*</span> <span class="n">vsl</span><span class="o">.</span><span class="n">dBz_IV</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">B0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">GYROMAGNETIC_RATIO</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="o">*</span><span class="mf">0.001</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">edge_width</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">sample_region</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="p">)</span>
+
+            <span class="n">signal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span>
+                <span class="n">phase</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">phase</span><span class="p">,</span>
+                <span class="n">is_IV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">is_IV</span><span class="p">,</span>
+                <span class="n">num_samples</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_spins</span><span class="p">,</span>
+                <span class="n">num_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
+                <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                <span class="n">sample_mask</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">sample</span><span class="p">,</span>
+                <span class="n">cplx</span><span class="o">=</span><span class="n">cplx</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Simulation Type </span><span class="se">\&#39;</span><span class="si">{</span><span class="n">simulation_type</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1"> is not valid!&#39;</span><span class="p">)</span>
+
+            
+        <span class="n">end</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        
+        <span class="n">trng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">num_dt</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">dt</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+        <span class="n">simTime</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span>
+           
+        <span class="k">return</span> <span class="n">signal</span><span class="p">,</span> <span class="n">trng</span><span class="p">,</span> <span class="n">simTime</span></div>
+
+<div class="viewcode-block" id="SimulationContinuous2D.validate_parameters"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDsimulation.SimulationContinuous2D.validate_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">validate_parameters</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="p">:</span> <span class="n">BOLDparameters</span><span class="o">.</span><span class="n">Parameters2D</span>
+    <span class="p">):</span>
+        <span class="c1">#TODO add validation</span>
+        <span class="k">pass</span></div></div>
+
+<div class="viewcode-block" id="SimulationDiscrete2D"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDsimulation.SimulationDiscrete2D">[docs]</a><span class="k">class</span> <span class="nc">SimulationDiscrete2D</span><span class="p">:</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="p">:</span> <span class="n">BOLDparameters</span><span class="o">.</span><span class="n">ParametersDiscrete2D</span><span class="p">,</span>
+        <span class="n">IV</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">voxelseed</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">spinseed</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">IV</span> <span class="o">=</span> <span class="n">IV</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">voxelseed</span> <span class="o">=</span> <span class="n">voxelseed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spinseed</span> <span class="o">=</span> <span class="n">spinseed</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_parameters</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="n">BOLDgrid</span><span class="o">.</span><span class="n">Grid2D</span><span class="p">(</span>
+            <span class="n">B0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">B0</span><span class="p">,</span>
+            <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+            <span class="n">N</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">N</span>
+        <span class="p">)</span>
+        
+        <span class="c1">#potentially unused, but it is a light structure if not populated</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spins</span> <span class="o">=</span> <span class="n">BOLDspins</span><span class="o">.</span><span class="n">SpinsDiscrete2D</span><span class="p">(</span>
+            <span class="n">ADC</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">ADC</span><span class="p">,</span>
+            <span class="n">B0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">B0</span><span class="p">,</span>
+            <span class="n">num_spins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_spins</span><span class="p">,</span>
+            <span class="n">num_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
+            <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+            <span class="n">edge_width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">edge_width</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">spinseed</span>
+        <span class="p">)</span>
+        
+        <span class="c1">#potentially unused, but it is a light structure if not populated</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deterministic_diffuser</span> <span class="o">=</span> <span class="n">BOLDdeterministic</span><span class="o">.</span><span class="n">DeterministicDiffuser2D</span><span class="p">(</span>
+            <span class="n">ADC</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">ADC</span><span class="p">,</span>
+            <span class="n">B0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">B0</span><span class="p">,</span>
+            <span class="n">num_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
+            <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+            <span class="n">edge_width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">edge_width</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span> <span class="o">=</span> <span class="n">BOLDsequence</span><span class="o">.</span><span class="n">Sequence</span><span class="p">(</span>
+            <span class="n">pulse_time_indices</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pulse_time_indices</span><span class="p">,</span>
+            <span class="n">pulse_angles</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pulse_angles</span><span class="p">,</span>
+            <span class="n">pulse_axes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pulse_axes</span><span class="p">,</span>
+            <span class="n">dB0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dB0</span><span class="p">,</span>
+            <span class="n">dB1fact</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dB1fact</span><span class="p">,</span>
+            <span class="n">T2EV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T2EV</span><span class="p">,</span>
+            <span class="n">T2IV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T2IV</span><span class="p">,</span>
+            <span class="n">T1EV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T1EV</span><span class="p">,</span>
+            <span class="n">T1IV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">T1IV</span>           
+        <span class="p">)</span>
+
+        <span class="c1">#potentially unused, but it is a light structure if not populated</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span> <span class="o">=</span> <span class="n">BOLDvoxel</span><span class="o">.</span><span class="n">Voxel2D</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">voxelseed</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="SimulationDiscrete2D.signal_simulation"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDsimulation.SimulationDiscrete2D.signal_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">signal_simulation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">offset_method</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;AnalyticalFromVoxel&#39;</span><span class="p">,</span>
+        <span class="n">diffusion_scheme</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;MonteCarlo&#39;</span><span class="p">,</span>
+        <span class="n">kernel_type</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;ModifiedBessel&#39;</span><span class="p">,</span>
+        <span class="n">permeable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">cplx</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">progressbar</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">vessels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">BOLDvessel</span><span class="o">.</span><span class="n">Vessel3D</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">extend</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+    
+        <span class="k">if</span> <span class="n">offset_method</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;AnalyticalFromVoxel&#39;</span><span class="p">,</span> <span class="s1">&#39;FFTFromVoxel&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">vessels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="o">.</span><span class="n">random_populate</span><span class="p">(</span>
+                    <span class="n">CBV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">CBV</span><span class="p">,</span>
+                    <span class="n">identifiers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">identifiers</span><span class="p">,</span>
+                    <span class="n">id_weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_weights</span><span class="p">,</span>
+                    <span class="n">id_diameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_diameters</span><span class="p">,</span>
+                    <span class="n">id_dchis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_dchis</span><span class="p">,</span>
+                    <span class="n">id_permeation_probabilities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_permeation_probabilities</span><span class="p">,</span>
+                    <span class="n">vessel_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">vessel_type</span><span class="p">,</span>
+                    <span class="n">allow_vessel_intersection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">allow_vessel_intersection</span><span class="p">,</span>
+                    <span class="n">progressbar</span><span class="o">=</span><span class="n">progressbar</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="o">.</span><span class="n">vessels</span> <span class="o">=</span> <span class="n">vessels</span>
+
+        <span class="k">if</span> <span class="n">offset_method</span> <span class="o">==</span> <span class="s1">&#39;AnalyticalFromVoxel&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span>
+                <span class="n">mode</span><span class="o">=</span><span class="n">offset_method</span><span class="p">,</span>
+                <span class="n">voxel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="p">,</span>
+                <span class="n">progressbar</span><span class="o">=</span><span class="n">progressbar</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">offset_method</span> <span class="o">==</span> <span class="s1">&#39;FFTFromVoxel&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span>
+                <span class="n">mode</span><span class="o">=</span><span class="n">offset_method</span><span class="p">,</span>
+                <span class="n">padding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span>
+                <span class="n">voxel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="p">,</span>
+                <span class="n">progressbar</span><span class="o">=</span><span class="n">progressbar</span><span class="p">,</span> 
+                <span class="n">extend</span><span class="o">=</span><span class="n">extend</span>
+                <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">offset_method</span> <span class="o">==</span> <span class="s1">&#39;FFTFromFile&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span>
+                <span class="n">mode</span><span class="o">=</span><span class="n">offset_method</span><span class="p">,</span>
+                <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+                <span class="n">padding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span>
+                <span class="n">id_permeation_probabilities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_permeation_probabilities</span><span class="p">,</span>
+                <span class="n">id_dchis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_dchis</span><span class="p">,</span>
+                <span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">,</span> 
+                <span class="n">progressbar</span><span class="o">=</span><span class="n">progressbar</span>
+            <span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Offset method </span><span class="se">\&#39;</span><span class="si">{</span><span class="n">offset_method</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1"> is not valid!&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">diffusion_scheme</span> <span class="o">==</span> <span class="s1">&#39;MonteCarlo&#39;</span><span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">random_walk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">IV</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span> <span class="n">progressbar</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">sample_region</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">)</span>
+            
+            <span class="n">signal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span>
+                <span class="n">phase</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">phase</span><span class="p">,</span>
+                <span class="n">is_IV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">is_IV</span><span class="p">,</span>
+                <span class="n">num_samples</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">num_spins</span><span class="p">,</span>
+                <span class="n">num_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
+                <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                <span class="n">sample_mask</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">sample</span><span class="p">,</span>
+                <span class="n">cplx</span><span class="o">=</span><span class="n">cplx</span>
+            <span class="p">)</span>
+        
+        <span class="k">elif</span> <span class="n">diffusion_scheme</span> <span class="o">==</span> <span class="s1">&#39;Deterministic&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_permeation_probabilities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Permeation probabilities do not work with deterministic simulations! Select either permeable or impermeable.&#39;</span><span class="p">)</span>
+            
+            <span class="n">signal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deterministic_diffuser</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span>
+                <span class="n">grid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span>
+                <span class="n">sequence</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="p">,</span>
+                <span class="n">kernel_type</span><span class="o">=</span><span class="n">kernel_type</span><span class="p">,</span>
+                <span class="n">cplx</span><span class="o">=</span><span class="n">cplx</span><span class="p">,</span>
+                <span class="n">permeable</span><span class="o">=</span><span class="n">permeable</span><span class="p">,</span>
+                <span class="n">progressbar</span><span class="o">=</span><span class="n">progressbar</span>
+            <span class="p">)</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+        <span class="n">time_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_dt</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span> <span class="o">+</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+        <span class="n">simulation_time</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span>
+
+        <span class="k">return</span> <span class="n">signal</span><span class="p">,</span> <span class="n">time_range</span><span class="p">,</span> <span class="n">simulation_time</span></div>
+
+<div class="viewcode-block" id="SimulationDiscrete2D.validate_parameters"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDsimulation.SimulationDiscrete2D.validate_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">validate_parameters</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="p">:</span> <span class="n">BOLDparameters</span><span class="o">.</span><span class="n">ParametersDiscrete3D</span>
+    <span class="p">):</span>
+        <span class="c1">#TODO add validation</span>
+        <span class="k">pass</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Jacob Chausse.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
