@@ -10,12 +10,11 @@ from numba.experimental import jitclass
 from typing import Union
 
 spec_infinite_cylinder_3D = [
-    ('identifier', types.unicode_type),
+    ('label', types.unicode_type),
     ('diameter', float64),
     ('theta', float64),
     ('phi', float64),
     ('origin', float64[:]),
-    ('volume_percent', float64),
     ('dchi', float64),
     ('permeation_probability', float64),
     ('normal_vector', float64[:]),
@@ -27,12 +26,11 @@ class InfiniteCylinder3DNumba:
 
     def __init__(
         self,
-        identifier,
+        label,
         diameter,
         theta, 
         phi, 
-        origin, 
-        volume_percent, 
+        origin,
         dchi, 
         permeation_probability
     ):
@@ -40,7 +38,7 @@ class InfiniteCylinder3DNumba:
 
         Parameters
         ----------
-        identifier : uint8[:]
+        label : uint8[:]
             uft-8 encoded string, to identify the vessel.
         diameter : float64
             vessel diameter (mm)
@@ -50,8 +48,6 @@ class InfiniteCylinder3DNumba:
             azimuth angle of the vessel direction (radians)
         origin : float64[:]
             cartesian coordinates of the vessel origin (mm)
-        volume_percent : float64
-            volume contribution of the vessel (fraction of 1)
         dchi : float64
             susceptibility difference between the vessel and the surrounding tissue (cgs units)
         permeation_probability : float64
@@ -59,12 +55,11 @@ class InfiniteCylinder3DNumba:
         """
 
         # initializing the vessel parameters to the vessel object
-        self.identifier = identifier
+        self.label = label
         self.diameter = diameter
         self.theta = theta
         self.phi = phi
         self.origin = origin
-        self.volume_percent = volume_percent
         self.dchi = dchi
         self.permeation_probability = permeation_probability
         self.normal_vector = np.array(
@@ -196,6 +191,20 @@ class InfiniteCylinder3DNumba:
         intersects = min_distance < (self.diameter + other.diameter)/2 
         
         return intersects
+    
+    def volume_percent(self, voxel_size: float) -> float:
+        # calculate radius of the sphere around the voxel
+        voxel_sphere_radius = 0.5 * np.sqrt(3) * voxel_size
+
+        r = np.linalg.norm(self.origin)
+
+        # calculate the estimated volume percent of the generated vessel
+        height = 2 * np.sqrt(voxel_sphere_radius**2 - r**2)
+        total_volume = 4 / 3 * np.pi * voxel_sphere_radius**3
+        volume = height * np.pi * (self.diameter / 2)**2
+        volume_percent = volume / total_volume
+
+        return volume_percent
 
     def _radial_vectors_from_positions(self, positions):
 
@@ -211,7 +220,7 @@ class InfiniteCylinder3D:
 
     Parameters
     ----------
-    identifier : str
+    label : str
         string to identify the vessel.
     diameter : float
         vessel diameter (mm)
@@ -221,8 +230,6 @@ class InfiniteCylinder3D:
         azimuth angle of the vessel direction (radians)
     origin : np.ndarray
         cartesian coordinates of the vessel origin (mm)
-    volume_percent : float
-        volume contribution of the vessel (fraction of 1)
     dchi : float
         susceptibility difference between the vessel and the surrounding tissue (cgs units)
     permeation_probability : float
@@ -236,17 +243,15 @@ class InfiniteCylinder3D:
         origin: np.ndarray, 
         dchi: float, 
         permeation_probability: float=0,
-        identifier: str='', 
-        volume_percent: float=0.0,
+        label: str=''
     ):
     
         return InfiniteCylinder3DNumba(
-            identifier=identifier,
+            label=label,
             diameter=diameter,
             theta=theta, 
             phi=phi, 
-            origin=origin, 
-            volume_percent=volume_percent, 
+            origin=origin,
             dchi=dchi, 
             permeation_probability=permeation_probability 
         )
@@ -257,7 +262,7 @@ class InfiniteCylinder3D:
         dchi: float,
         voxel_size: float,
         permeation_probability: float=0,
-        identifier: str='None',
+        label: str='None',
         rng = np.random.default_rng()
     ) -> InfiniteCylinder3DNumba:
 
@@ -286,31 +291,23 @@ class InfiniteCylinder3D:
         z = -r * calpha * stheta
         origin = np.array([x, y, z])
 
-        # calculate the estimated volume percent of the generated vessel
-        height = 2 * np.sqrt(voxel_sphere_radius**2 - r**2)
-        total_volume = 4 / 3 * np.pi * voxel_sphere_radius**3
-        volume = height * np.pi * (diameter / 2)**2
-        volume_percent = volume / total_volume
-
         # return vessel object with the generated components
         return InfiniteCylinder3DNumba(
-            identifier,
+            label,
             diameter,
             theta,
             phi,
             origin,
-            volume_percent,
             dchi,
             permeation_probability
         )
 
 spec_infinite_cylinder_2D = [
-    ('identifier', types.unicode_type),
+    ('label', types.unicode_type),
     ('diameter', float64),
     ('theta', float64),
     ('phi', float64),
     ('origin', float64[:]),
-    ('volume_percent', float64),
     ('dchi', float64),
     ('permeation_probability', float64),
     ('normal_vector', float64[:]),
@@ -322,23 +319,21 @@ class InfiniteCylinder2DNumba:
               
     def __init__(
         self, 
-        identifier, 
+        label, 
         diameter, 
         B0_theta, 
         B0_phi, 
-        origin, 
-        volume_percent, 
+        origin,
         dchi, 
         permeation_probability
     ):
 
         #initializing the vessel parameters to the vessel object
-        self.identifier = identifier
+        self.label = label
         self.diameter = diameter
         self.theta = B0_theta
         self.phi = B0_phi
         self.origin = origin
-        self.volume_percent = volume_percent
         self.dchi = dchi
         self.permeation_probability = permeation_probability
         
@@ -446,6 +441,14 @@ class InfiniteCylinder2DNumba:
         intersects = x**2 + y**2 <= min_distance**2
         
         return intersects
+    
+    def volume_percent(self, voxel_size: float) -> float:
+        total_volume = voxel_size**2
+        vessel_volume = np.pi*(self.diameter/2)**2
+        
+        volume_percent = vessel_volume/total_volume
+
+        return volume_percent
 
     def _radial_distances_and_angles_from_positions(self, points):
 
@@ -472,17 +475,15 @@ class InfiniteCylinder2D:
         origin: np.ndarray, 
         dchi: float, 
         permeation_probability: float=0,
-        identifier: str='None', 
-        volume_percent: float=0.0,
+        label: str='None',
     ):
     
         return InfiniteCylinder2DNumba(
-            identifier=identifier,
+            label=label,
             diameter=diameter,
             B0_theta=B0_theta, 
             B0_phi=B0_phi, 
-            origin=origin, 
-            volume_percent=volume_percent, 
+            origin=origin,
             dchi=dchi, 
             permeation_probability=permeation_probability 
         )
@@ -493,37 +494,30 @@ class InfiniteCylinder2D:
         dchi: float,
         voxel_size: float,
         permeation_probability: float=0,
-        identifier: str='None',
+        label: str='None',
         rng = np.random.default_rng()
     ) -> InfiniteCylinder3DNumba:
 
-        origin = (rng.random(2)-0.5)*voxel_size    
-        
-        total_volume = voxel_size**2
-        vessel_volume = np.pi*(diameter/2)**2
-        
-        volume_percent = vessel_volume/total_volume
+        origin = (rng.random(2)-0.5)*voxel_size
         
         B0_theta=np.arccos(2*rng.random()-1)
         B0_phi=2*np.pi*rng.random()
         
         #create a new vessel object using the generated parameters and add it to the vessel list
         return InfiniteCylinder2DNumba(
-            identifier,
+            label,
             diameter,
             B0_theta,
             B0_phi,
             origin,
-            volume_percent,
             dchi,
             permeation_probability,
         )
 
 spec_sphere_3D = [
-    ('identifier', types.unicode_type),
+    ('label', types.unicode_type),
     ('diameter', float64),
     ('origin', float64[:]),
-    ('volume_percent', float64),
     ('dchi', float64),
     ('permeation_probability', float64)
 ]
@@ -532,10 +526,9 @@ spec_sphere_3D = [
 class Sphere3DNumba:
 
     def __init__(self,
-        identifier,
+        label,
         diameter,
-        origin, 
-        volume_percent,
+        origin,
         dchi,
         permeation_probability=0.0
     ):
@@ -543,14 +536,12 @@ class Sphere3DNumba:
 
         Parameters
         ----------
-        identifier : uint8[:]
+        label : uint8[:]
             uft-8 encoded string, to identify the vessel.
         diameter : float64
             vessel diameter (mm)
         origin : float64[:]
             cartesian coordinates of the vessel origin (mm)
-        volume_percent : float64
-            volume contribution of the vessel (fraction of 1)
         dchi : float64
             susceptibility difference between the vessel and the surrounding tissue (cgs units)
         permeation_probability : float64
@@ -558,10 +549,9 @@ class Sphere3DNumba:
         """
 
         # initializing the vessel parameters to the vessel object
-        self.identifier = identifier
+        self.label = label
         self.diameter = diameter
         self.origin = origin
-        self.volume_percent = volume_percent 
         self.dchi = dchi
         self.permeation_probability = permeation_probability  # for compatibility
 
@@ -620,6 +610,14 @@ class Sphere3DNumba:
         intersects = distance < (self.diameter + other.diameter)/2
 
         return intersects
+    
+    def volume_percent(self, voxel_size: float) -> float:
+        # calculate the estimated volume percent of the generated vessel
+        total_volume = voxel_size**3
+        sphere_volume = 4 / 3 * np.pi * (self.diameter / 2)**3
+        volume_percent = sphere_volume / total_volume
+
+        return volume_percent
 
     def _radial_distances_and_angles(self, positions):
         # finding the distance between the center of the vessel and the point
@@ -635,14 +633,12 @@ class Sphere3D:
 
     Parameters
     ----------
-    identifier : str
+    label : str
         string to identify the vessel.
     diameter : float
         vessel diameter (mm)
     origin : np.ndarray
         cartesian coordinates of the vessel origin (mm)
-    volume_percent : float
-        volume contribution of the vessel (fraction of 1)
     dchi : float
         susceptibility difference between the vessel and the surrounding tissue (cgs units)
     permeation_probability : float
@@ -654,15 +650,13 @@ class Sphere3D:
         origin: np.ndarray, 
         dchi: float, 
         permeation_probability: float=0,
-        identifier: str='None', 
-        volume_percent: float=0.0,
+        label: str='None'
     ):
     
         return Sphere3DNumba(
-            identifier=identifier,
+            label=label,
             diameter=diameter,
-            origin=origin, 
-            volume_percent=volume_percent, 
+            origin=origin,
             dchi=dchi, 
             permeation_probability=permeation_probability 
         )
@@ -673,24 +667,18 @@ class Sphere3D:
         dchi: float,
         voxel_size: float,
         permeation_probability: float=0,
-        identifier: str='None',
+        label: str='None',
         rng = np.random.default_rng()
     ) -> InfiniteCylinder3DNumba:
 
         # generate a random point in the voxel
         origin = (rng.random(3) - 0.5) * voxel_size
 
-        # calculate the estimated volume percent of the generated vessel
-        total_volume = voxel_size**3
-        sphere_volume = 4 / 3 * np.pi * (diameter / 2)**3
-        volume_percent = sphere_volume / total_volume
-
         # return vessel object with the generated components
         return Sphere3DNumba(
-            identifier,
+            label,
             diameter,
             origin,
-            volume_percent,
             dchi,
             permeation_probability
         )

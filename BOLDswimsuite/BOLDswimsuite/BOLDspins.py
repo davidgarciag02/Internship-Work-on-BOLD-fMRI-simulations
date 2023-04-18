@@ -11,7 +11,7 @@ class SpinsContinuous3D:
         num_spins: int,
         num_dt: int,
         dt: float,
-        edge_width: float=0,
+        IV: bool=True,
         seed: int=None
     ):
         
@@ -20,11 +20,9 @@ class SpinsContinuous3D:
         self.num_spins = num_spins
         self.num_dt = num_dt
         self.dt = dt
-        self.edge_width = edge_width
 
         self.positions = np.zeros((self.num_spins, self.num_dt, 3))
         self.is_IV_vessel = None
-        self.sample = None
 
         self.phase = np.zeros((self.num_spins, self.num_dt))
         self.is_IV = np.zeros((self.num_spins, self.num_dt), dtype=bool)
@@ -38,7 +36,7 @@ class SpinsContinuous3D:
     def random_walk(
         self,
         voxel: BOLDvoxel.Voxel3D,
-        IV: bool=True,
+        IV: bool=False,
         record_is_IV_vessel: bool=False,
         progressbar: bool=True
     ) -> None:
@@ -165,7 +163,7 @@ class SpinsContinuous3D:
 
             #recalculate the phase of the incorrect spins
             if fix_spins_indices.size > 0:
-                dBz = self.dBz_fix(fix_spins_positions, fix_spins_is_IV_vsl, voxel)
+                dBz = self._dBz_fix(fix_spins_positions, fix_spins_is_IV_vsl, voxel)
                 self.phase[fix_spins_indices,j] = \
                     phase_conversion_factor * dBz
 
@@ -179,10 +177,8 @@ class SpinsContinuous3D:
             # new position becomes the previous position
             previous_position = new_position
             previous_is_IV_vsl = new_is_IV_vsl
-        
-        self.sample_region(voxel=voxel)
 
-    def dBz_fix(
+    def _dBz_fix(
         self,
         positions: np.ndarray,
         is_IV_vsl: np.ndarray,
@@ -208,7 +204,7 @@ class SpinsContinuous3D:
         # check if the spin has diffused in the specific vessel only
         position = np.expand_dims(position, axis=0)
         is_permeated = vessel.is_IV(position) != previous_is_IV
-        return(is_permeated)
+        return is_permeated
         
 
     def check_diffusion_EV(
@@ -224,7 +220,7 @@ class SpinsContinuous3D:
             is_permeated = vessel.is_IV(position) != previous_is_IV
             if is_permeated:  # if the spin has diffused across a vessel wall, try again
                 break
-        return(is_permeated)
+        return is_permeated
 
     def place_spins(
         self,
@@ -263,19 +259,6 @@ class SpinsContinuous3D:
 
             self.positions[:, 0, :] = position
 
-    def sample_region(
-        self,
-        voxel: BOLDvoxel.Voxel3D
-    ) -> None:
-
-        # calculates the sample region edge position (center of region at
-        # 0,0,0)
-        sample_size = (voxel.size - 2 * self.edge_width * voxel.size) / 2
-
-        # create the boolean array
-        self.sample = np.concatenate(
-            (np.ones((self.num_spins, 1)), 1 * np.all(np.abs(self.positions) <= sample_size, 2)), 1)
-
 class SpinsDiscrete3D:
 
     def __init__(
@@ -285,7 +268,6 @@ class SpinsDiscrete3D:
         num_spins: int,
         num_dt: int,
         dt: float,
-        edge_width: float,
         seed: int=None
     ):
 
@@ -295,10 +277,8 @@ class SpinsDiscrete3D:
         self.num_dt = num_dt
         self.dt = dt
         self.N = None
-        self.edge_width = edge_width
 
         self.positions = np.zeros((self.num_spins, self.num_dt, 3))
-        self.sample = None
 
         self.phase = np.zeros((self.num_spins, self.num_dt))
         self.is_IV = np.zeros((self.num_spins, self.num_dt), dtype=int)
@@ -442,15 +422,6 @@ class SpinsDiscrete3D:
 
         return X, Y, Z
 
-    def sample_region(self, grid: BOLDgrid.Grid3D):
-        # calculates the sample region edge position (center of region at
-        # 0,0,0)
-        sample_size = (grid.size - 2 * self.edge_width * grid.size) / 2
-
-        # create the boolean array
-        self.sample = np.concatenate(
-            (np.ones((self.num_spins, 1)), 1 * np.all(np.abs(self.positions) <= sample_size, 2)), 1)
-
 class SpinsContinuous2D:
 
     def __init__(
@@ -460,7 +431,6 @@ class SpinsContinuous2D:
         num_spins: int,
         num_dt: int,
         dt: float,
-        edge_width: float,
         seed: int=None
     ):
 
@@ -469,11 +439,9 @@ class SpinsContinuous2D:
         self.num_spins = num_spins
         self.num_dt = num_dt
         self.dt = dt
-        self.edge_width = edge_width
 
         self.positions = np.zeros((self.num_spins, self.num_dt, 2))
         self.is_IV_vessel = None
-        self.sample = None
 
         self.phase = np.zeros((self.num_spins, self.num_dt))
         self.is_IV = np.zeros((self.num_spins, self.num_dt), dtype=int)
@@ -614,7 +582,7 @@ class SpinsContinuous2D:
 
             #recalculate the phase of the incorrect spins
             if fix_spins_indices.size > 0:
-                dBz = self.dBz_fix(fix_spins_positions, fix_spins_is_IV_vsl, voxel)
+                dBz = self._dBz_fix(fix_spins_positions, fix_spins_is_IV_vsl, voxel)
                 self.phase[fix_spins_indices,j] = \
                     phase_conversion_factor * dBz
 
@@ -629,7 +597,7 @@ class SpinsContinuous2D:
             previous_position = new_position
             previous_is_IV_vsl = new_is_IV_vsl
 
-    def dBz_fix(
+    def _dBz_fix(
         self,
         positions: np.ndarray,
         is_IV_vsl: np.ndarray,
@@ -710,19 +678,6 @@ class SpinsContinuous2D:
 
             self.positions[:, 0, :] = position
 
-    def sample_region(
-        self,
-        voxel: BOLDvoxel.Voxel2D
-    ) -> None:
-
-        # calculates the sample region edge position (center of region at
-        # 0,0,0)
-        sample_size = (voxel.size - 2 * self.edge_width * voxel.size) / 2
-
-        # create the boolean array
-        self.sample = np.concatenate(
-            (np.ones((self.num_spins, 1)), 1 * np.all(np.abs(self.positions) <= sample_size, 2)), 1)
-
 class SpinsDiscrete2D:  
 
     def __init__(
@@ -732,7 +687,6 @@ class SpinsDiscrete2D:
         num_spins: int,
         num_dt: int,
         dt: float,
-        edge_width: float,
         seed: int=None
     ):
 
@@ -742,10 +696,8 @@ class SpinsDiscrete2D:
         self.num_dt = num_dt
         self.dt = dt
         self.N = None
-        self.edge_width = edge_width
 
         self.positions = np.zeros((self.num_spins, self.num_dt, 2))
-        self.sample = None
 
         self.phase = np.zeros((self.num_spins, self.num_dt))
         self.is_IV = np.zeros((self.num_spins, self.num_dt), dtype=int)
@@ -891,12 +843,3 @@ class SpinsDiscrete2D:
         Y = grid_positions[:,1]
 
         return X, Y
-
-    def sample_region(self, grid: BOLDgrid.Grid2D):
-        # calculates the sample region edge position (center of region at
-        # 0,0,0)
-        sample_size = (grid.size - 2 * self.edge_width * grid.size) / 2
-
-        # create the boolean array
-        self.sample = np.concatenate(
-            (np.ones((self.num_spins, 1)), 1 * np.all(np.abs(self.positions) <= sample_size, 2)), 1)

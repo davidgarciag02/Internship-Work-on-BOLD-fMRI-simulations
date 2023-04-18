@@ -29,7 +29,7 @@ class SimulationContinuous3D:
             self.voxel = BOLDvoxel.Voxel3D.from_random(
                 size=parameters.size,
                 CBV=self.parameters.CBV,
-                identifiers=self.parameters.identifiers,
+                labels=self.parameters.labels,
                 id_weights=self.parameters.id_weights,
                 id_diameters=self.parameters.id_diameters,
                 id_dchis=self.parameters.id_dchis,
@@ -52,7 +52,6 @@ class SimulationContinuous3D:
             num_spins=self.parameters.num_spins,
             num_dt=self.parameters.num_dt,
             dt=self.parameters.dt,
-            edge_width=self.parameters.edge_width,
             seed=self.spinseed
         )
 
@@ -125,7 +124,6 @@ class SimulationDiscrete3D:
             num_spins=self.parameters.num_spins,
             num_dt=self.parameters.num_dt,
             dt=self.parameters.dt,
-            edge_width=self.parameters.edge_width,
             seed=spinseed
         )
         self.sequence = BOLDsequence.Sequence(
@@ -158,7 +156,7 @@ class SimulationDiscrete3D:
                 self.voxel = BOLDvoxel.Voxel3D.from_random(
                     size=self.parameters.size,
                     CBV=self.parameters.CBV,
-                    identifiers=self.parameters.identifiers,
+                    labels=self.parameters.labels,
                     id_weights=self.parameters.id_weights,
                     id_diameters=self.parameters.id_diameters,
                     id_dchis=self.parameters.id_dchis,
@@ -267,7 +265,6 @@ class SimulationContinuous2D:
             num_spins=self.parameters.num_spins,
             num_dt=self.parameters.num_dt,
             dt=self.parameters.dt,
-            edge_width=self.parameters.edge_width,
             seed=spinseed            
         )
 
@@ -297,7 +294,7 @@ class SimulationContinuous2D:
         if vessels is None:
             self.voxel.random_populate(
                 CBV=self.parameters.CBV,
-                identifiers=self.parameters.identifiers,
+                labels=self.parameters.labels,
                 id_weights=self.parameters.id_weights,
                 id_diameters=self.parameters.id_diameters,
                 id_dchis=self.parameters.id_dchis,
@@ -342,9 +339,6 @@ class SimulationContinuous2D:
 
             for vsl in self.voxel.vessels:                
                 self.spins.phase[self.spins.is_IV_vessel == vsl] += 1/3 * vsl.dBz_IV(self.spins.B0) * (2*np.pi*GYROMAGNETIC_RATIO*self.parameters.dt*0.001)
-            
-            if self.parameters.edge_width is not None:
-                self.spins.sample_region(self.voxel)
 
             signal = self.sequence.signal(
                 phase=self.spins.phase,
@@ -402,7 +396,6 @@ class SimulationDiscrete2D:
             num_spins=self.parameters.num_spins,
             num_dt=self.parameters.num_dt,
             dt=self.parameters.dt,
-            edge_width=self.parameters.edge_width,
             seed=spinseed
         )
         
@@ -412,7 +405,6 @@ class SimulationDiscrete2D:
             B0=self.parameters.B0,
             num_dt=self.parameters.num_dt,
             dt=self.parameters.dt,
-            edge_width=self.parameters.edge_width,
         )
 
         self.sequence = BOLDsequence.Sequence(
@@ -450,7 +442,7 @@ class SimulationDiscrete2D:
             if vessels is None:
                 self.voxel.random_populate(
                     CBV=self.parameters.CBV,
-                    identifiers=self.parameters.identifiers,
+                    labels=self.parameters.labels,
                     id_weights=self.parameters.id_weights,
                     id_diameters=self.parameters.id_diameters,
                     id_dchis=self.parameters.id_dchis,

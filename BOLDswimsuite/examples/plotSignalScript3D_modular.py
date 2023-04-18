@@ -11,7 +11,7 @@ def main():
     voxel = BOLDvoxel.Voxel3D.from_random(
         size=size,
         CBV=0.02,
-        identifiers=['vsl1'],
+        labels=['vsl1'],
         id_weights={'vsl1':1},
         id_diameters={'vsl1':[vessel_diameter]},
         id_dchis={'vsl1':3e-8},
@@ -28,7 +28,6 @@ def main():
         num_spins=10_000,
         num_dt=600,
         dt=0.2,
-        edge_width=0,
         seed=None
     )
 

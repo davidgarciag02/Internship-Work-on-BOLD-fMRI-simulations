@@ -44,7 +44,6 @@ class Sequence:
             num_samples=spins.num_spins,
             num_dt=spins.num_dt,
             dt=spins.dt,
-            sample_mask=spins.sample,
             cplx=cplx
         )
 
@@ -55,7 +54,6 @@ class Sequence:
         num_samples: int,
         num_dt: int,
         dt: float,
-        sample_mask: Optional[np.ndarray]=None,
         cplx: bool=False
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         '''Calculates the BOLD signal from populated Mx and My arrays.
@@ -142,13 +140,10 @@ class Sequence:
                     end - 1
                 )
 
-        # removes spins that are not in the sampling region
-        if sample_mask is not None:
-            self.Mx = self.Mx * sample_mask
-            self.My = self.My * sample_mask
-        else:
-            self.Mx = self.Mx
-            self.My = self.My
+
+
+        self.Mx = self.Mx
+        self.My = self.My
 
         # calculating the transverse magnetization using the complex notation
         Mxy = self.Mx + 1j * self.My
@@ -159,15 +154,9 @@ class Sequence:
         Mxy_EV = Mxy * np.logical_not(is_IV_mask)
         Mxy_IV = Mxy * is_IV_mask
 
-        # averaging the magnetization over the spins at all time steps
-        if sample_mask is not None:
-            complex_signal = np.sum(Mxy, 0) / np.count_nonzero(sample_mask, 0)
-            complex_signal_EV = np.sum(Mxy_EV, 0) / np.count_nonzero(np.logical_not(is_IV_mask) * sample_mask, 0)
-            complex_signal_IV = np.sum(Mxy_IV, 0) / np.count_nonzero(is_IV_mask * sample_mask, 0)
-        else:
-            complex_signal = np.mean(Mxy, 0)
-            complex_signal_EV = np.mean(Mxy_EV, 0)
-            complex_signal_IV = np.mean(Mxy_IV, 0)
+        complex_signal = np.mean(Mxy, 0)
+        complex_signal_EV = np.mean(Mxy_EV, 0)
+        complex_signal_IV = np.mean(Mxy_IV, 0)
 
         if cplx:
             return complex_signal, complex_signal_EV, complex_signal_IV

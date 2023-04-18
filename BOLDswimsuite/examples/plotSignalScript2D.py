@@ -14,15 +14,15 @@ def main():
         CBV=0.02,                   #cerebral blood volume (% ratio)
 
         # VESSEL PARAMETERS
-        identifiers =                   ['identifier1'],            #identifiers of vessels, simply used as keys to dictionaries                        
+        labels =                   ['label1'],            #labels of vessels, simply used as keys to dictionaries                        
 
-        id_weights =                    {'identifier1': 1},         #weight of each vessel id for the total CBV                      
+        id_weights =                    {'label1': 1},         #weight of each vessel id for the total CBV                      
 
-        id_diameters =                  {'identifier1': [0.002]},   #vessel diameter distribution of each id (mm)                                    
+        id_diameters =                  {'label1': [0.002]},   #vessel diameter distribution of each id (mm)                                    
 
-        id_dchis =                      {'identifier1': 3e-8},      #susceptibility difference (vessel to tissue) of each id in cgs                    
+        id_dchis =                      {'label1': 3e-8},      #susceptibility difference (vessel to tissue) of each id in cgs                    
 
-        id_permeation_probabilities =   {'identifier1': 0},         #permeation probability of each id
+        id_permeation_probabilities =   {'label1': 0},         #permeation probability of each id
 
         # SPIN PARAMETERS
         ADC=0.001,          #diffusion length (mm^2/s)
