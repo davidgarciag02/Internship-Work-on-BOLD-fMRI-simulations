@@ -33,8 +33,8 @@ class DeterministicDiffuser2D:
     ):        
         self.N = grid.N
         self.size = grid.size
-        ip_map = grid.mask > 0
-        ep_map = np.logical_not(ip_map)
+        IV_mask = grid.mask > 0
+        EV_mask = np.logical_not(IV_mask)
         phase = grid.phase
 
         signalEV = np.zeros(self.num_dt+1) + 0j
@@ -53,8 +53,8 @@ class DeterministicDiffuser2D:
         phase = self.offset_all(phase, sequence.dB0)
         
         edge = int(np.floor(self.N * self.edge_width))
-        nnzEV = np.sum(ep_map[edge:-edge-1,edge:-edge-1])
-        nnzIV = np.sum(ip_map[edge:-edge-1,edge:-edge-1])
+        nnzEV = np.sum(EV_mask[edge:-edge-1,edge:-edge-1])
+        nnzIV = np.sum(IV_mask[edge:-edge-1,edge:-edge-1])
         
         Mx = np.zeros((self.N, self.N))
         My = np.zeros((self.N, self.N))
@@ -64,8 +64,8 @@ class DeterministicDiffuser2D:
         
         Mx, My, Mz = self.rot_any(Mx, My, Mz, sequence.pulse_axes[0][0], sequence.pulse_axes[0][1], sequence.pulse_angles[0])
         
-        signalEV[0] = np.sum( (ep_map * (Mx + 1j*My))[edge:-edge-1,edge:-edge-1] ) / nnzEV
-        signalIV[0] = np.sum( (ip_map * (Mx + 1j*My))[edge:-edge-1,edge:-edge-1] ) / nnzIV
+        signalEV[0] = np.sum( (EV_mask * (Mx + 1j*My))[edge:-edge-1,edge:-edge-1] ) / nnzEV
+        signalIV[0] = np.sum( (IV_mask * (Mx + 1j*My))[edge:-edge-1,edge:-edge-1] ) / nnzIV
         signal[0] = (signalEV[0] * nnzEV + signalIV[0] * nnzIV)/ (nnzEV + nnzIV)
         
         intervals = list(sequence.pulse_time_indices)
@@ -76,7 +76,7 @@ class DeterministicDiffuser2D:
             if permeable:
                 Mx, My = self.diffusion_convolution_permeable(Mx, My, kernel_type) 
             else:
-                Mx, My = self.diffusion_convolution_impermeable(Mx, My, ip_map, ep_map, kernel_type) 
+                Mx, My = self.diffusion_convolution_impermeable(Mx, My, IV_mask, EV_mask, kernel_type) 
             
             Mx, My = self.rot_phase(Mx, My, phase)
             
@@ -86,18 +86,18 @@ class DeterministicDiffuser2D:
                 Mx, My, Mz = self.rot_any(Mx, My, Mz, sequence.pulse_axes[current_interval][0], sequence.pulse_axes[current_interval][1], angle)
             
             if sequence.T1IV is not None:
-                Mz = self.T1decay(Mz, j-intervals(current_interval), ip_map, sequence.T1IV)
+                Mz = self.T1decay(Mz, j-intervals(current_interval), IV_mask, sequence.T1IV)
             if sequence.T1EV is not None:
-                Mz = self.T1decay(Mz, j-intervals(current_interval), ep_map, sequence.T1EV)    
+                Mz = self.T1decay(Mz, j-intervals(current_interval), EV_mask, sequence.T1EV)    
             if sequence.T2IV is not None:
-                Mx, My = self.T2decay(Mx, My, j-intervals(current_interval), ip_map, sequence.T2IV)
+                Mx, My = self.T2decay(Mx, My, j-intervals(current_interval), IV_mask, sequence.T2IV)
             if sequence.T2EV is not None:
-                Mx, My = self.T2decay(Mx, My, j-intervals(current_interval), ep_map, sequence.T2EV)
+                Mx, My = self.T2decay(Mx, My, j-intervals(current_interval), EV_mask, sequence.T2EV)
             
-            MxEV = Mx * ep_map
-            MyEV = My * ep_map
-            MxIV = Mx * ip_map
-            MyIV = My * ip_map
+            MxEV = Mx * EV_mask
+            MyEV = My * EV_mask
+            MxIV = Mx * IV_mask
+            MyIV = My * IV_mask
                 
             signalEV[j] = np.sum(MxEV[edge:-edge-1,edge:-edge-1] + 1j*MyEV[edge:-edge-1,edge:-edge-1]) / nnzEV
             signalIV[j] = np.sum(MxIV[edge:-edge-1,edge:-edge-1] + 1j*MyIV[edge:-edge-1,edge:-edge-1]) / nnzIV

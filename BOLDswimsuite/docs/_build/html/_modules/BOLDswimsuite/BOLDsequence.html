@@ -113,7 +113,6 @@
             <span class="n">num_samples</span><span class="o">=</span><span class="n">spins</span><span class="o">.</span><span class="n">num_spins</span><span class="p">,</span>
             <span class="n">num_dt</span><span class="o">=</span><span class="n">spins</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
             <span class="n">dt</span><span class="o">=</span><span class="n">spins</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
-            <span class="n">sample_mask</span><span class="o">=</span><span class="n">spins</span><span class="o">.</span><span class="n">sample</span><span class="p">,</span>
             <span class="n">cplx</span><span class="o">=</span><span class="n">cplx</span>
         <span class="p">)</span></div>
 
@@ -124,7 +123,6 @@
         <span class="n">num_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">num_dt</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">sample_mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">cplx</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;Calculates the BOLD signal from populated Mx and My arrays.</span>
@@ -211,13 +209,10 @@
                     <span class="n">end</span> <span class="o">-</span> <span class="mi">1</span>
                 <span class="p">)</span>
 
-        <span class="c1"># removes spins that are not in the sampling region</span>
-        <span class="k">if</span> <span class="n">sample_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">Mx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Mx</span> <span class="o">*</span> <span class="n">sample_mask</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">My</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">My</span> <span class="o">*</span> <span class="n">sample_mask</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">Mx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Mx</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">My</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">My</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">Mx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Mx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">My</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">My</span>
 
         <span class="c1"># calculating the transverse magnetization using the complex notation</span>
         <span class="n">Mxy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Mx</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">My</span>
@@ -228,15 +223,9 @@
         <span class="n">Mxy_EV</span> <span class="o">=</span> <span class="n">Mxy</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">is_IV_mask</span><span class="p">)</span>
         <span class="n">Mxy_IV</span> <span class="o">=</span> <span class="n">Mxy</span> <span class="o">*</span> <span class="n">is_IV_mask</span>
 
-        <span class="c1"># averaging the magnetization over the spins at all time steps</span>
-        <span class="k">if</span> <span class="n">sample_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">complex_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Mxy</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">sample_mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="n">complex_signal_EV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Mxy_EV</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">is_IV_mask</span><span class="p">)</span> <span class="o">*</span> <span class="n">sample_mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="n">complex_signal_IV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Mxy_IV</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">is_IV_mask</span> <span class="o">*</span> <span class="n">sample_mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">complex_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Mxy</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="n">complex_signal_EV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Mxy_EV</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="n">complex_signal_IV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Mxy_IV</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">complex_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Mxy</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">complex_signal_EV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Mxy_EV</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">complex_signal_IV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Mxy_IV</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">cplx</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">complex_signal</span><span class="p">,</span> <span class="n">complex_signal_EV</span><span class="p">,</span> <span class="n">complex_signal_IV</span>

@@ -98,7 +98,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span> <span class="o">=</span> <span class="n">BOLDvoxel</span><span class="o">.</span><span class="n">Voxel3D</span><span class="o">.</span><span class="n">from_random</span><span class="p">(</span>
                 <span class="n">size</span><span class="o">=</span><span class="n">parameters</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
                 <span class="n">CBV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">CBV</span><span class="p">,</span>
-                <span class="n">identifiers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">identifiers</span><span class="p">,</span>
+                <span class="n">labels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">labels</span><span class="p">,</span>
                 <span class="n">id_weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_weights</span><span class="p">,</span>
                 <span class="n">id_diameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_diameters</span><span class="p">,</span>
                 <span class="n">id_dchis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_dchis</span><span class="p">,</span>
@@ -121,7 +121,6 @@
             <span class="n">num_spins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_spins</span><span class="p">,</span>
             <span class="n">num_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
             <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
-            <span class="n">edge_width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">edge_width</span><span class="p">,</span>
             <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spinseed</span>
         <span class="p">)</span>
 
@@ -194,7 +193,6 @@
             <span class="n">num_spins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_spins</span><span class="p">,</span>
             <span class="n">num_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
             <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
-            <span class="n">edge_width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">edge_width</span><span class="p">,</span>
             <span class="n">seed</span><span class="o">=</span><span class="n">spinseed</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span> <span class="o">=</span> <span class="n">BOLDsequence</span><span class="o">.</span><span class="n">Sequence</span><span class="p">(</span>
@@ -227,7 +225,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span> <span class="o">=</span> <span class="n">BOLDvoxel</span><span class="o">.</span><span class="n">Voxel3D</span><span class="o">.</span><span class="n">from_random</span><span class="p">(</span>
                     <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
                     <span class="n">CBV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">CBV</span><span class="p">,</span>
-                    <span class="n">identifiers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">identifiers</span><span class="p">,</span>
+                    <span class="n">labels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">labels</span><span class="p">,</span>
                     <span class="n">id_weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_weights</span><span class="p">,</span>
                     <span class="n">id_diameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_diameters</span><span class="p">,</span>
                     <span class="n">id_dchis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_dchis</span><span class="p">,</span>
@@ -336,7 +334,6 @@
             <span class="n">num_spins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_spins</span><span class="p">,</span>
             <span class="n">num_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
             <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
-            <span class="n">edge_width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">edge_width</span><span class="p">,</span>
             <span class="n">seed</span><span class="o">=</span><span class="n">spinseed</span>            
         <span class="p">)</span>
 
@@ -366,7 +363,7 @@
         <span class="k">if</span> <span class="n">vessels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="o">.</span><span class="n">random_populate</span><span class="p">(</span>
                 <span class="n">CBV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">CBV</span><span class="p">,</span>
-                <span class="n">identifiers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">identifiers</span><span class="p">,</span>
+                <span class="n">labels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">labels</span><span class="p">,</span>
                 <span class="n">id_weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_weights</span><span class="p">,</span>
                 <span class="n">id_diameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_diameters</span><span class="p">,</span>
                 <span class="n">id_dchis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_dchis</span><span class="p">,</span>
@@ -411,9 +408,6 @@
 
             <span class="k">for</span> <span class="n">vsl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="o">.</span><span class="n">vessels</span><span class="p">:</span>                
                 <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">phase</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">is_IV_vessel</span> <span class="o">==</span> <span class="n">vsl</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span> <span class="o">*</span> <span class="n">vsl</span><span class="o">.</span><span class="n">dBz_IV</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">B0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">GYROMAGNETIC_RATIO</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="o">*</span><span class="mf">0.001</span><span class="p">)</span>
-            
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">edge_width</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">sample_region</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="p">)</span>
 
             <span class="n">signal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span>
                 <span class="n">phase</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">phase</span><span class="p">,</span>
@@ -471,7 +465,6 @@
             <span class="n">num_spins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_spins</span><span class="p">,</span>
             <span class="n">num_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
             <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
-            <span class="n">edge_width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">edge_width</span><span class="p">,</span>
             <span class="n">seed</span><span class="o">=</span><span class="n">spinseed</span>
         <span class="p">)</span>
         
@@ -481,7 +474,6 @@
             <span class="n">B0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">B0</span><span class="p">,</span>
             <span class="n">num_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">num_dt</span><span class="p">,</span>
             <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
-            <span class="n">edge_width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">edge_width</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span> <span class="o">=</span> <span class="n">BOLDsequence</span><span class="o">.</span><span class="n">Sequence</span><span class="p">(</span>
@@ -519,7 +511,7 @@
             <span class="k">if</span> <span class="n">vessels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">voxel</span><span class="o">.</span><span class="n">random_populate</span><span class="p">(</span>
                     <span class="n">CBV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">CBV</span><span class="p">,</span>
-                    <span class="n">identifiers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">identifiers</span><span class="p">,</span>
+                    <span class="n">labels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">labels</span><span class="p">,</span>
                     <span class="n">id_weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_weights</span><span class="p">,</span>
                     <span class="n">id_diameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_diameters</span><span class="p">,</span>
                     <span class="n">id_dchis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">id_dchis</span><span class="p">,</span>

@@ -74,17 +74,16 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">float64</span><span class="p">,</span> <span class="n">uint8</span>   <span class="c1"># import the types</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">float64</span><span class="p">,</span> <span class="n">uint8</span><span class="p">,</span> <span class="n">types</span>   <span class="c1"># import the types</span>
 <span class="kn">from</span> <span class="nn">numba.experimental</span> <span class="kn">import</span> <span class="n">jitclass</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
 
 <span class="n">spec_infinite_cylinder_3D</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">(</span><span class="s1">&#39;identifier&#39;</span><span class="p">,</span> <span class="n">uint8</span><span class="p">[:]),</span>
+    <span class="p">(</span><span class="s1">&#39;label&#39;</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">unicode_type</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;diameter&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;theta&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;phi&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;origin&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:]),</span>
-    <span class="p">(</span><span class="s1">&#39;volume_percent&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;dchi&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;permeation_probability&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;normal_vector&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:]),</span>
@@ -93,17 +92,14 @@
 
 <span class="nd">@jitclass</span><span class="p">(</span><span class="n">spec_infinite_cylinder_3D</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">InfiniteCylinder3DNumba</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;3D infinite cylinder object</span>
-<span class="sd">    &quot;&quot;&quot;</span>    
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">identifier</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">,</span>
         <span class="n">diameter</span><span class="p">,</span>
         <span class="n">theta</span><span class="p">,</span> 
         <span class="n">phi</span><span class="p">,</span> 
-        <span class="n">origin</span><span class="p">,</span> 
-        <span class="n">volume_percent</span><span class="p">,</span> 
+        <span class="n">origin</span><span class="p">,</span>
         <span class="n">dchi</span><span class="p">,</span> 
         <span class="n">permeation_probability</span>
     <span class="p">):</span>
@@ -111,7 +107,7 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        identifier : uint8[:]</span>
+<span class="sd">        label : uint8[:]</span>
 <span class="sd">            uft-8 encoded string, to identify the vessel.</span>
 <span class="sd">        diameter : float64</span>
 <span class="sd">            vessel diameter (mm)</span>
@@ -121,8 +117,6 @@
 <span class="sd">            azimuth angle of the vessel direction (radians)</span>
 <span class="sd">        origin : float64[:]</span>
 <span class="sd">            cartesian coordinates of the vessel origin (mm)</span>
-<span class="sd">        volume_percent : float64</span>
-<span class="sd">            volume contribution of the vessel (fraction of 1)</span>
 <span class="sd">        dchi : float64</span>
 <span class="sd">            susceptibility difference between the vessel and the surrounding tissue (cgs units)</span>
 <span class="sd">        permeation_probability : float64</span>
@@ -130,12 +124,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># initializing the vessel parameters to the vessel object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">identifier</span> <span class="o">=</span> <span class="n">identifier</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">diameter</span> <span class="o">=</span> <span class="n">diameter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">=</span> <span class="n">phi</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="n">origin</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">volume_percent</span> <span class="o">=</span> <span class="n">volume_percent</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dchi</span> <span class="o">=</span> <span class="n">dchi</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">permeation_probability</span> <span class="o">=</span> <span class="n">permeation_probability</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">normal_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
@@ -180,16 +173,13 @@
         <span class="n">cos2_phis</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">cos_phis</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span>
 
         <span class="c1"># calculating field offset using the appropriate equation (dchi in cgs, angles in radians, lengths in mm)</span>
-        <span class="n">dBz_EV</span> <span class="o">=</span> <span class="n">B0</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dchi</span> <span class="o">*</span> \
-            <span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">diameter</span><span class="o">/</span><span class="n">radial_distances</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> \
-            <span class="n">cos2_phis</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">dBz_EV</span> <span class="o">=</span> <span class="n">B0</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dchi</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">diameter</span><span class="o">/</span><span class="n">radial_distances</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">cos2_phis</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
         
         <span class="c1">#TODO add this everywhere</span>
         <span class="c1"># some vessel intersection may cause spins to use EV values for dBz even when they are IV</span>
         <span class="c1"># this makes all IV values in the dBzEV equal to the value at the vessel boundary where</span>
         <span class="c1"># &quot;0.5*self.diameter == radial_distance_magnitudes&quot;</span>
-        <span class="n">dBz_EV</span><span class="p">[</span><span class="n">is_IV</span><span class="p">]</span> <span class="o">=</span> <span class="n">B0</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dchi</span> <span class="o">*</span> \
-            <span class="n">cos2_phis</span><span class="p">[</span><span class="n">is_IV</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">dBz_EV</span><span class="p">[</span><span class="n">is_IV</span><span class="p">]</span> <span class="o">=</span> <span class="n">B0</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dchi</span><span class="o">*</span><span class="n">cos2_phis</span><span class="p">[</span><span class="n">is_IV</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
 
         <span class="n">dBz_IV</span> <span class="o">=</span> <span class="n">B0</span><span class="o">*</span><span class="mi">4</span><span class="o">/</span><span class="mi">6</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dchi</span><span class="o">*</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
@@ -267,6 +257,20 @@
         <span class="n">intersects</span> <span class="o">=</span> <span class="n">min_distance</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">diameter</span> <span class="o">+</span> <span class="n">other</span><span class="o">.</span><span class="n">diameter</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span> 
         
         <span class="k">return</span> <span class="n">intersects</span>
+    
+    <span class="k">def</span> <span class="nf">volume_percent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">voxel_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="c1"># calculate radius of the sphere around the voxel</span>
+        <span class="n">voxel_sphere_radius</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">voxel_size</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span>
+
+        <span class="c1"># calculate the estimated volume percent of the generated vessel</span>
+        <span class="n">height</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">voxel_sphere_radius</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">r</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">total_volume</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">/</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">voxel_sphere_radius</span><span class="o">**</span><span class="mi">3</span>
+        <span class="n">volume</span> <span class="o">=</span> <span class="n">height</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">diameter</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">volume_percent</span> <span class="o">=</span> <span class="n">volume</span> <span class="o">/</span> <span class="n">total_volume</span>
+
+        <span class="k">return</span> <span class="n">volume_percent</span>
 
     <span class="k">def</span> <span class="nf">_radial_vectors_from_positions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">positions</span><span class="p">):</span>
 
@@ -282,7 +286,7 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    identifier : str</span>
+<span class="sd">    label : str</span>
 <span class="sd">        string to identify the vessel.</span>
 <span class="sd">    diameter : float</span>
 <span class="sd">        vessel diameter (mm)</span>
@@ -292,8 +296,6 @@
 <span class="sd">        azimuth angle of the vessel direction (radians)</span>
 <span class="sd">    origin : np.ndarray</span>
 <span class="sd">        cartesian coordinates of the vessel origin (mm)</span>
-<span class="sd">    volume_percent : float</span>
-<span class="sd">        volume contribution of the vessel (fraction of 1)</span>
 <span class="sd">    dchi : float</span>
 <span class="sd">        susceptibility difference between the vessel and the surrounding tissue (cgs units)</span>
 <span class="sd">    permeation_probability : float</span>
@@ -307,20 +309,15 @@
         <span class="n">origin</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
         <span class="n">dchi</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> 
         <span class="n">permeation_probability</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">,</span> 
-        <span class="n">volume_percent</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
     <span class="p">):</span>
-
-        <span class="c1"># create vessel identifier in char array format (for Numba)</span>
-        <span class="n">id_encoded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">identifier</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
     
         <span class="k">return</span> <span class="n">InfiniteCylinder3DNumba</span><span class="p">(</span>
-            <span class="n">identifier</span><span class="o">=</span><span class="n">id_encoded</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
             <span class="n">diameter</span><span class="o">=</span><span class="n">diameter</span><span class="p">,</span>
             <span class="n">theta</span><span class="o">=</span><span class="n">theta</span><span class="p">,</span> 
             <span class="n">phi</span><span class="o">=</span><span class="n">phi</span><span class="p">,</span> 
-            <span class="n">origin</span><span class="o">=</span><span class="n">origin</span><span class="p">,</span> 
-            <span class="n">volume_percent</span><span class="o">=</span><span class="n">volume_percent</span><span class="p">,</span> 
+            <span class="n">origin</span><span class="o">=</span><span class="n">origin</span><span class="p">,</span>
             <span class="n">dchi</span><span class="o">=</span><span class="n">dchi</span><span class="p">,</span> 
             <span class="n">permeation_probability</span><span class="o">=</span><span class="n">permeation_probability</span> 
         <span class="p">)</span>
@@ -331,7 +328,7 @@
         <span class="n">dchi</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">voxel_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">permeation_probability</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">()</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InfiniteCylinder3DNumba</span><span class="p">:</span>
 
@@ -360,34 +357,23 @@
         <span class="n">z</span> <span class="o">=</span> <span class="o">-</span><span class="n">r</span> <span class="o">*</span> <span class="n">calpha</span> <span class="o">*</span> <span class="n">stheta</span>
         <span class="n">origin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">])</span>
 
-        <span class="c1"># calculate the estimated volume percent of the generated vessel</span>
-        <span class="n">height</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">voxel_sphere_radius</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">r</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">total_volume</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">/</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">voxel_sphere_radius</span><span class="o">**</span><span class="mi">3</span>
-        <span class="n">volume</span> <span class="o">=</span> <span class="n">height</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">diameter</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
-        <span class="n">volume_percent</span> <span class="o">=</span> <span class="n">volume</span> <span class="o">/</span> <span class="n">total_volume</span>
-
-        <span class="c1"># create vessel identifier in char array format (for Numba)</span>
-        <span class="n">id_encoded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">identifier</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
-
         <span class="c1"># return vessel object with the generated components</span>
         <span class="k">return</span> <span class="n">InfiniteCylinder3DNumba</span><span class="p">(</span>
-            <span class="n">id_encoded</span><span class="p">,</span>
+            <span class="n">label</span><span class="p">,</span>
             <span class="n">diameter</span><span class="p">,</span>
             <span class="n">theta</span><span class="p">,</span>
             <span class="n">phi</span><span class="p">,</span>
             <span class="n">origin</span><span class="p">,</span>
-            <span class="n">volume_percent</span><span class="p">,</span>
             <span class="n">dchi</span><span class="p">,</span>
             <span class="n">permeation_probability</span>
         <span class="p">)</span></div></div>
 
 <span class="n">spec_infinite_cylinder_2D</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">(</span><span class="s1">&#39;identifier&#39;</span><span class="p">,</span> <span class="n">uint8</span><span class="p">[:]),</span>
+    <span class="p">(</span><span class="s1">&#39;label&#39;</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">unicode_type</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;diameter&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;theta&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;phi&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;origin&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:]),</span>
-    <span class="p">(</span><span class="s1">&#39;volume_percent&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;dchi&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;permeation_probability&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;normal_vector&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:]),</span>
@@ -399,23 +385,21 @@
               
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> 
-        <span class="n">identifier</span><span class="p">,</span> 
+        <span class="n">label</span><span class="p">,</span> 
         <span class="n">diameter</span><span class="p">,</span> 
         <span class="n">B0_theta</span><span class="p">,</span> 
         <span class="n">B0_phi</span><span class="p">,</span> 
-        <span class="n">origin</span><span class="p">,</span> 
-        <span class="n">volume_percent</span><span class="p">,</span> 
+        <span class="n">origin</span><span class="p">,</span>
         <span class="n">dchi</span><span class="p">,</span> 
         <span class="n">permeation_probability</span>
     <span class="p">):</span>
 
         <span class="c1">#initializing the vessel parameters to the vessel object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">identifier</span> <span class="o">=</span> <span class="n">identifier</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">diameter</span> <span class="o">=</span> <span class="n">diameter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">theta</span> <span class="o">=</span> <span class="n">B0_theta</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">=</span> <span class="n">B0_phi</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="n">origin</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">volume_percent</span> <span class="o">=</span> <span class="n">volume_percent</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dchi</span> <span class="o">=</span> <span class="n">dchi</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">permeation_probability</span> <span class="o">=</span> <span class="n">permeation_probability</span>
         
@@ -523,6 +507,14 @@
         <span class="n">intersects</span> <span class="o">=</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span> <span class="o">&lt;=</span> <span class="n">min_distance</span><span class="o">**</span><span class="mi">2</span>
         
         <span class="k">return</span> <span class="n">intersects</span>
+    
+    <span class="k">def</span> <span class="nf">volume_percent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">voxel_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">total_volume</span> <span class="o">=</span> <span class="n">voxel_size</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">vessel_volume</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">diameter</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        
+        <span class="n">volume_percent</span> <span class="o">=</span> <span class="n">vessel_volume</span><span class="o">/</span><span class="n">total_volume</span>
+
+        <span class="k">return</span> <span class="n">volume_percent</span>
 
     <span class="k">def</span> <span class="nf">_radial_distances_and_angles_from_positions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
 
@@ -549,19 +541,15 @@
         <span class="n">origin</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
         <span class="n">dchi</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> 
         <span class="n">permeation_probability</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">,</span> 
-        <span class="n">volume_percent</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="c1"># create vessel identifier in char array format (for Numba)</span>
-        <span class="n">id_encoded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">identifier</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
     
         <span class="k">return</span> <span class="n">InfiniteCylinder2DNumba</span><span class="p">(</span>
-            <span class="n">identifier</span><span class="o">=</span><span class="n">id_encoded</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
             <span class="n">diameter</span><span class="o">=</span><span class="n">diameter</span><span class="p">,</span>
             <span class="n">B0_theta</span><span class="o">=</span><span class="n">B0_theta</span><span class="p">,</span> 
             <span class="n">B0_phi</span><span class="o">=</span><span class="n">B0_phi</span><span class="p">,</span> 
-            <span class="n">origin</span><span class="o">=</span><span class="n">origin</span><span class="p">,</span> 
-            <span class="n">volume_percent</span><span class="o">=</span><span class="n">volume_percent</span><span class="p">,</span> 
+            <span class="n">origin</span><span class="o">=</span><span class="n">origin</span><span class="p">,</span>
             <span class="n">dchi</span><span class="o">=</span><span class="n">dchi</span><span class="p">,</span> 
             <span class="n">permeation_probability</span><span class="o">=</span><span class="n">permeation_probability</span> 
         <span class="p">)</span>
@@ -572,40 +560,30 @@
         <span class="n">dchi</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">voxel_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">permeation_probability</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">()</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InfiniteCylinder3DNumba</span><span class="p">:</span>
 
-        <span class="n">origin</span> <span class="o">=</span> <span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span><span class="o">*</span><span class="n">voxel_size</span>    
-        
-        <span class="n">total_volume</span> <span class="o">=</span> <span class="n">voxel_size</span><span class="o">**</span><span class="mi">2</span>
-        <span class="n">vessel_volume</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">diameter</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
-        
-        <span class="n">volume_percent</span> <span class="o">=</span> <span class="n">vessel_volume</span><span class="o">/</span><span class="n">total_volume</span>
+        <span class="n">origin</span> <span class="o">=</span> <span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span><span class="o">*</span><span class="n">voxel_size</span>
         
         <span class="n">B0_theta</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">B0_phi</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
-
-        <span class="c1"># create vessel identifier in char array format (for Numba)</span>
-        <span class="n">id_encoded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">identifier</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
         
         <span class="c1">#create a new vessel object using the generated parameters and add it to the vessel list</span>
         <span class="k">return</span> <span class="n">InfiniteCylinder2DNumba</span><span class="p">(</span>
-            <span class="n">id_encoded</span><span class="p">,</span>
+            <span class="n">label</span><span class="p">,</span>
             <span class="n">diameter</span><span class="p">,</span>
             <span class="n">B0_theta</span><span class="p">,</span>
             <span class="n">B0_phi</span><span class="p">,</span>
             <span class="n">origin</span><span class="p">,</span>
-            <span class="n">volume_percent</span><span class="p">,</span>
             <span class="n">dchi</span><span class="p">,</span>
             <span class="n">permeation_probability</span><span class="p">,</span>
         <span class="p">)</span></div></div>
 
 <span class="n">spec_sphere_3D</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">(</span><span class="s1">&#39;identifier&#39;</span><span class="p">,</span> <span class="n">uint8</span><span class="p">[:]),</span>
+    <span class="p">(</span><span class="s1">&#39;label&#39;</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">unicode_type</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;diameter&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;origin&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:]),</span>
-    <span class="p">(</span><span class="s1">&#39;volume_percent&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;dchi&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
     <span class="p">(</span><span class="s1">&#39;permeation_probability&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">)</span>
 <span class="p">]</span>
@@ -614,10 +592,9 @@
 <span class="k">class</span> <span class="nc">Sphere3DNumba</span><span class="p">:</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-        <span class="n">identifier</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">,</span>
         <span class="n">diameter</span><span class="p">,</span>
-        <span class="n">origin</span><span class="p">,</span> 
-        <span class="n">volume_percent</span><span class="p">,</span>
+        <span class="n">origin</span><span class="p">,</span>
         <span class="n">dchi</span><span class="p">,</span>
         <span class="n">permeation_probability</span><span class="o">=</span><span class="mf">0.0</span>
     <span class="p">):</span>
@@ -625,14 +602,12 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        identifier : uint8[:]</span>
+<span class="sd">        label : uint8[:]</span>
 <span class="sd">            uft-8 encoded string, to identify the vessel.</span>
 <span class="sd">        diameter : float64</span>
 <span class="sd">            vessel diameter (mm)</span>
 <span class="sd">        origin : float64[:]</span>
 <span class="sd">            cartesian coordinates of the vessel origin (mm)</span>
-<span class="sd">        volume_percent : float64</span>
-<span class="sd">            volume contribution of the vessel (fraction of 1)</span>
 <span class="sd">        dchi : float64</span>
 <span class="sd">            susceptibility difference between the vessel and the surrounding tissue (cgs units)</span>
 <span class="sd">        permeation_probability : float64</span>
@@ -640,10 +615,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># initializing the vessel parameters to the vessel object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">identifier</span> <span class="o">=</span> <span class="n">identifier</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">diameter</span> <span class="o">=</span> <span class="n">diameter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="n">origin</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">volume_percent</span> <span class="o">=</span> <span class="n">volume_percent</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">dchi</span> <span class="o">=</span> <span class="n">dchi</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">permeation_probability</span> <span class="o">=</span> <span class="n">permeation_probability</span>  <span class="c1"># for compatibility</span>
 
@@ -702,6 +676,14 @@
         <span class="n">intersects</span> <span class="o">=</span> <span class="n">distance</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">diameter</span> <span class="o">+</span> <span class="n">other</span><span class="o">.</span><span class="n">diameter</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>
 
         <span class="k">return</span> <span class="n">intersects</span>
+    
+    <span class="k">def</span> <span class="nf">volume_percent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">voxel_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="c1"># calculate the estimated volume percent of the generated vessel</span>
+        <span class="n">total_volume</span> <span class="o">=</span> <span class="n">voxel_size</span><span class="o">**</span><span class="mi">3</span>
+        <span class="n">sphere_volume</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">/</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">diameter</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span>
+        <span class="n">volume_percent</span> <span class="o">=</span> <span class="n">sphere_volume</span> <span class="o">/</span> <span class="n">total_volume</span>
+
+        <span class="k">return</span> <span class="n">volume_percent</span>
 
     <span class="k">def</span> <span class="nf">_radial_distances_and_angles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">positions</span><span class="p">):</span>
         <span class="c1"># finding the distance between the center of the vessel and the point</span>
@@ -717,14 +699,12 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    identifier : str</span>
+<span class="sd">    label : str</span>
 <span class="sd">        string to identify the vessel.</span>
 <span class="sd">    diameter : float</span>
 <span class="sd">        vessel diameter (mm)</span>
 <span class="sd">    origin : np.ndarray</span>
 <span class="sd">        cartesian coordinates of the vessel origin (mm)</span>
-<span class="sd">    volume_percent : float</span>
-<span class="sd">        volume contribution of the vessel (fraction of 1)</span>
 <span class="sd">    dchi : float</span>
 <span class="sd">        susceptibility difference between the vessel and the surrounding tissue (cgs units)</span>
 <span class="sd">    permeation_probability : float</span>
@@ -736,18 +716,13 @@
         <span class="n">origin</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
         <span class="n">dchi</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> 
         <span class="n">permeation_probability</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">,</span> 
-        <span class="n">volume_percent</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;None&#39;</span>
     <span class="p">):</span>
-
-        <span class="c1"># create vessel identifier in char array format (for Numba)</span>
-        <span class="n">id_encoded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">identifier</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
     
         <span class="k">return</span> <span class="n">Sphere3DNumba</span><span class="p">(</span>
-            <span class="n">identifier</span><span class="o">=</span><span class="n">id_encoded</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
             <span class="n">diameter</span><span class="o">=</span><span class="n">diameter</span><span class="p">,</span>
-            <span class="n">origin</span><span class="o">=</span><span class="n">origin</span><span class="p">,</span> 
-            <span class="n">volume_percent</span><span class="o">=</span><span class="n">volume_percent</span><span class="p">,</span> 
+            <span class="n">origin</span><span class="o">=</span><span class="n">origin</span><span class="p">,</span>
             <span class="n">dchi</span><span class="o">=</span><span class="n">dchi</span><span class="p">,</span> 
             <span class="n">permeation_probability</span><span class="o">=</span><span class="n">permeation_probability</span> 
         <span class="p">)</span>
@@ -758,29 +733,18 @@
         <span class="n">dchi</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">voxel_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">permeation_probability</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">()</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InfiniteCylinder3DNumba</span><span class="p">:</span>
 
         <span class="c1"># generate a random point in the voxel</span>
         <span class="n">origin</span> <span class="o">=</span> <span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">voxel_size</span>
 
-        <span class="c1"># calculate the estimated volume percent of the generated vessel</span>
-        <span class="n">total_volume</span> <span class="o">=</span> <span class="n">voxel_size</span><span class="o">**</span><span class="mi">3</span>
-        <span class="n">sphere_volume</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">/</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">diameter</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span>
-        <span class="n">volume_percent</span> <span class="o">=</span> <span class="n">sphere_volume</span> <span class="o">/</span> <span class="n">total_volume</span>
-
-        <span class="c1"># create vessel identifier in char array format (for Numba)</span>
-        <span class="n">id_encoded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">identifier</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
-
-        <span class="n">permeation_probability</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1">#no IV contribution added, defaults to 0</span>
-
         <span class="c1"># return vessel object with the generated components</span>
         <span class="k">return</span> <span class="n">Sphere3DNumba</span><span class="p">(</span>
-            <span class="n">id_encoded</span><span class="p">,</span>
+            <span class="n">label</span><span class="p">,</span>
             <span class="n">diameter</span><span class="p">,</span>
             <span class="n">origin</span><span class="p">,</span>
-            <span class="n">volume_percent</span><span class="p">,</span>
             <span class="n">dchi</span><span class="p">,</span>
             <span class="n">permeation_probability</span>
         <span class="p">)</span></div></div>

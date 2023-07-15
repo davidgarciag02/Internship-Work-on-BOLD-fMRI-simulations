@@ -1,5 +1,5 @@
 import warnings
-from . import BOLDparameters, BOLDvessel, BOLDvoxel, BOLDgrid, BOLDspins, BOLDsequence, BOLDdeterministic
+from . import BOLDparameters, BOLDspinsDeprecated, BOLDvessel, BOLDvoxel, BOLDgrid, BOLDsequence, BOLDdeterministic
 from .BOLDconstants import *
 import numpy as np
 import datetime
@@ -46,7 +46,7 @@ class SimulationContinuous3D:
                 seed=None
             )
         
-        self.spins = BOLDspins.SpinsContinuous3D(
+        self.spins = BOLDspinsDeprecated.Spins(
             ADC=self.parameters.ADC,
             B0=self.parameters.B0,
             num_spins=self.parameters.num_spins,
@@ -118,7 +118,7 @@ class SimulationDiscrete3D:
 
         self.grid = None
         
-        self.spins = BOLDspins.SpinsDiscrete3D(
+        self.spins = BOLDspinsDeprecated.SpinsDiscrete3D(
             ADC=self.parameters.ADC,
             B0=self.parameters.B0,
             num_spins=self.parameters.num_spins,
@@ -259,7 +259,7 @@ class SimulationContinuous2D:
             seed=voxelseed
         )
         
-        self.spins=BOLDspins.SpinsContinuous2D(
+        self.spins=BOLDspinsDeprecated.SpinsContinuous2D(
             ADC=self.parameters.ADC,
             B0=self.parameters.B0,
             num_spins=self.parameters.num_spins,
@@ -390,7 +390,7 @@ class SimulationDiscrete2D:
         )
         
         #potentially unused, but it is a light structure if not populated
-        self.spins = BOLDspins.SpinsDiscrete2D(
+        self.spins = BOLDspinsDeprecated.SpinsDiscrete2D(
             ADC=self.parameters.ADC,
             B0=self.parameters.B0,
             num_spins=self.parameters.num_spins,

@@ -104,16 +104,13 @@ class InfiniteCylinder3DNumba:
         cos2_phis = 2 * cos_phis**2 - 1
 
         # calculating field offset using the appropriate equation (dchi in cgs, angles in radians, lengths in mm)
-        dBz_EV = B0*2*np.pi*self.dchi * \
-            (0.5*self.diameter/radial_distances)**2 * \
-            cos2_phis*(np.sin(self.theta))**2
+        dBz_EV = B0*2*np.pi*self.dchi*(0.5*self.diameter/radial_distances)**2*cos2_phis*(np.sin(self.theta))**2
         
         #TODO add this everywhere
         # some vessel intersection may cause spins to use EV values for dBz even when they are IV
         # this makes all IV values in the dBzEV equal to the value at the vessel boundary where
         # "0.5*self.diameter == radial_distance_magnitudes"
-        dBz_EV[is_IV] = B0*2*np.pi*self.dchi * \
-            cos2_phis[is_IV]*(np.sin(self.theta))**2
+        dBz_EV[is_IV] = B0*2*np.pi*self.dchi*cos2_phis[is_IV]*(np.sin(self.theta))**2
 
         dBz_IV = B0*4/6*np.pi*self.dchi*(3*np.cos(self.theta)**2-1)
 

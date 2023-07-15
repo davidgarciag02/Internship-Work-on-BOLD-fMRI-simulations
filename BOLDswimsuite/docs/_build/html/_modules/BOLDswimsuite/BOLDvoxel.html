@@ -67,7 +67,8 @@
            <div itemprop="articleBody">
              
   <h1>Source code for BOLDswimsuite.BOLDvoxel</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span>  <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
 <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">BOLDvessel</span>
@@ -83,21 +84,22 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">real_CBV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">real_CBV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
 
 <div class="viewcode-block" id="Voxel3D.add_vessel"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDvoxel.Voxel3D.add_vessel">[docs]</a>    <span class="k">def</span> <span class="nf">add_vessel</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">vessel</span><span class="p">:</span> <span class="n">BOLDvessel</span><span class="o">.</span><span class="n">Vessel3D</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Voxel3D</span><span class="p">:</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">vessels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vessel</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vessels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vessel</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
 
 <div class="viewcode-block" id="Voxel3D.from_random"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDvoxel.Voxel3D.from_random">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_random</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">CBV</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">identifiers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">labels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">id_weights</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
         <span class="n">id_diameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
         <span class="n">id_dchis</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
@@ -106,7 +108,7 @@
         <span class="n">allow_vessel_intersection</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">progressbar</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span>
-    <span class="p">):</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Voxel3D</span><span class="p">:</span>
 
         <span class="n">voxel</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
@@ -123,18 +125,18 @@
 
         <span class="n">total_CBV</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># initializing target CBV</span>
         <span class="n">current_CBV</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># initializing current CBV</span>
+        
         <span class="n">total_weight</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># initializing total CBV weight</span>
-
-        <span class="k">for</span> <span class="n">identifier</span> <span class="ow">in</span> <span class="n">identifiers</span><span class="p">:</span>
-            <span class="n">total_weight</span> <span class="o">+=</span> <span class="n">id_weights</span><span class="p">[</span><span class="n">identifier</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
+            <span class="n">total_weight</span> <span class="o">+=</span> <span class="n">id_weights</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
 
         <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;Populating Voxel&#39;</span>
         <span class="k">with</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">progressbar</span><span class="p">)</span> <span class="k">as</span> <span class="n">pbar</span><span class="p">:</span>
 
             <span class="c1"># iterating through all vessel types</span>
-            <span class="k">for</span> <span class="n">identifier</span> <span class="ow">in</span> <span class="n">identifiers</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
                 <span class="c1"># CBV occupied by the current vessel type</span>
-                <span class="n">type_CBV</span> <span class="o">=</span> <span class="n">CBV</span> <span class="o">*</span> <span class="n">id_weights</span><span class="p">[</span><span class="n">identifier</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_weight</span>
+                <span class="n">type_CBV</span> <span class="o">=</span> <span class="n">CBV</span> <span class="o">*</span> <span class="n">id_weights</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_weight</span>
                 <span class="c1"># target CBV incremented by the vessel type&#39;s CBV</span>
                 <span class="n">total_CBV</span> <span class="o">+=</span> <span class="n">type_CBV</span>
 
@@ -146,22 +148,22 @@
                     <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
                     <span class="k">while</span> <span class="n">vessel_intersects</span><span class="p">:</span>
                         <span class="c1"># picks diameter</span>
-                        <span class="n">diameters</span> <span class="o">=</span> <span class="n">id_diameters</span><span class="p">[</span><span class="n">identifier</span><span class="p">]</span>
+                        <span class="n">diameters</span> <span class="o">=</span> <span class="n">id_diameters</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
                         <span class="n">diameter</span> <span class="o">=</span> <span class="n">voxel</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">diameters</span><span class="p">)</span>
 
                         <span class="c1"># picks dChi</span>
-                        <span class="n">dchi</span> <span class="o">=</span> <span class="n">id_dchis</span><span class="p">[</span><span class="n">identifier</span><span class="p">]</span>
+                        <span class="n">dchi</span> <span class="o">=</span> <span class="n">id_dchis</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
 
                         <span class="c1"># picks permeation probability</span>
-                        <span class="n">permeation_probability</span> <span class="o">=</span> <span class="n">id_permeation_probabilities</span><span class="p">[</span><span class="n">identifier</span><span class="p">]</span> <span class="k">if</span> <span class="n">id_permeation_probabilities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span>
+                        <span class="n">permeation_probability</span> <span class="o">=</span> <span class="n">id_permeation_probabilities</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="k">if</span> <span class="n">id_permeation_probabilities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span>
 
                         <span class="c1">#generate vessel</span>
-                        <span class="n">vessel</span> <span class="o">=</span> <span class="n">vessel_class</span><span class="o">.</span><span class="n">from_random</span><span class="p">(</span>
+                        <span class="n">vessel</span><span class="p">:</span> <span class="n">BOLDvessel</span><span class="o">.</span><span class="n">Vessel3D</span> <span class="o">=</span> <span class="n">vessel_class</span><span class="o">.</span><span class="n">from_random</span><span class="p">(</span>
                             <span class="n">diameter</span><span class="o">=</span><span class="n">diameter</span><span class="p">,</span>
                             <span class="n">dchi</span><span class="o">=</span><span class="n">dchi</span><span class="p">,</span>
                             <span class="n">voxel_size</span><span class="o">=</span><span class="n">voxel</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
                             <span class="n">permeation_probability</span><span class="o">=</span><span class="n">permeation_probability</span><span class="p">,</span>
-                            <span class="n">identifier</span><span class="o">=</span><span class="n">identifier</span><span class="p">,</span>
+                            <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
                             <span class="n">rng</span><span class="o">=</span><span class="n">voxel</span><span class="o">.</span><span class="n">rng</span>
                         <span class="p">)</span>                        
                         
@@ -179,7 +181,7 @@
                     <span class="n">voxel</span><span class="o">.</span><span class="n">add_vessel</span><span class="p">(</span><span class="n">vessel</span><span class="p">)</span>
                     
                     <span class="c1"># adding volume contribution from new vessel</span>
-                    <span class="n">current_CBV</span> <span class="o">+=</span> <span class="n">vessel</span><span class="o">.</span><span class="n">volume_percent</span>
+                    <span class="n">current_CBV</span> <span class="o">+=</span> <span class="n">vessel</span><span class="o">.</span><span class="n">volume_percent</span><span class="p">(</span><span class="n">voxel</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
                     
                     <span class="c1">#manual override of the progress bar</span>
                     <span class="n">progress_percentage</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">current_CBV</span> <span class="o">/</span> <span class="n">total_CBV</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> 
@@ -190,7 +192,7 @@
             <span class="c1"># final CBV stored</span>
             <span class="n">voxel</span><span class="o">.</span><span class="n">real_CBV</span> <span class="o">=</span> <span class="n">current_CBV</span>
 
-            <span class="k">return</span> <span class="n">voxel</span></div></div>
+        <span class="k">return</span> <span class="n">voxel</span></div></div>
 
 <div class="viewcode-block" id="Voxel2D"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDvoxel.Voxel2D">[docs]</a><span class="k">class</span> <span class="nc">Voxel2D</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -201,22 +203,23 @@
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vessels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BOLDvessel</span><span class="o">.</span><span class="n">Vessel3D</span><span class="p">]</span> <span class="o">=</span> <span class="n">vessels</span> <span class="k">if</span> <span class="n">vessels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">real_CBV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">real_CBV</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
     
 <div class="viewcode-block" id="Voxel2D.add_vessel"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDvoxel.Voxel2D.add_vessel">[docs]</a>    <span class="k">def</span> <span class="nf">add_vessel</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">vessel</span><span class="p">:</span> <span class="n">BOLDvessel</span><span class="o">.</span><span class="n">Vessel2D</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Voxel2D</span><span class="p">:</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">vessels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vessel</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vessels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vessel</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
 
 <div class="viewcode-block" id="Voxel2D.from_random"><a class="viewcode-back" href="../../BOLDswimsuite.html#BOLDswimsuite.BOLDvoxel.Voxel2D.from_random">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_random</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">CBV</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">identifiers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">labels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">id_weights</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
         <span class="n">id_diameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
         <span class="n">id_dchis</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
@@ -225,7 +228,7 @@
         <span class="n">allow_vessel_intersection</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">progressbar</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Voxel2D</span><span class="p">:</span>
 
         <span class="n">voxel</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
@@ -242,17 +245,17 @@
 
         <span class="n">total_CBV</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># initializing target CBV</span>
         <span class="n">current_CBV</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># initializing current CBV</span>
-
+        
         <span class="n">total_weight</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">identifier</span> <span class="ow">in</span> <span class="n">identifiers</span><span class="p">:</span>
-            <span class="n">total_weight</span> <span class="o">+=</span> <span class="n">id_weights</span><span class="p">[</span><span class="n">identifier</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
+            <span class="n">total_weight</span> <span class="o">+=</span> <span class="n">id_weights</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
 
         <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;Populating Voxel&#39;</span>
         <span class="k">with</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">progressbar</span><span class="p">)</span> <span class="k">as</span> <span class="n">pbar</span><span class="p">:</span>
              <span class="c1"># iterating through all vessel types</span>
-            <span class="k">for</span> <span class="n">identifier</span> <span class="ow">in</span> <span class="n">identifiers</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
                 <span class="c1"># CBV occupied by the current vessel type</span>
-                <span class="n">type_CBV</span> <span class="o">=</span> <span class="n">CBV</span> <span class="o">*</span> <span class="n">id_weights</span><span class="p">[</span><span class="n">identifier</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_weight</span>
+                <span class="n">type_CBV</span> <span class="o">=</span> <span class="n">CBV</span> <span class="o">*</span> <span class="n">id_weights</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_weight</span>
                 <span class="c1"># target CBV incremented by the vessel type&#39;s CBV</span>
                 <span class="n">total_CBV</span> <span class="o">+=</span> <span class="n">type_CBV</span>
 
@@ -264,22 +267,22 @@
                     <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
                     <span class="k">while</span> <span class="n">vessel_intersects</span><span class="p">:</span>
                         <span class="c1"># picks diameter</span>
-                        <span class="n">diameters</span> <span class="o">=</span> <span class="n">id_diameters</span><span class="p">[</span><span class="n">identifier</span><span class="p">]</span>
+                        <span class="n">diameters</span> <span class="o">=</span> <span class="n">id_diameters</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
                         <span class="n">diameter</span> <span class="o">=</span> <span class="n">voxel</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">diameters</span><span class="p">)</span>
 
                         <span class="c1"># picks dChi</span>
-                        <span class="n">dchi</span> <span class="o">=</span> <span class="n">id_dchis</span><span class="p">[</span><span class="n">identifier</span><span class="p">]</span>
+                        <span class="n">dchi</span> <span class="o">=</span> <span class="n">id_dchis</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
 
                         <span class="c1"># picks permeation probability (impermeable if not set)</span>
-                        <span class="n">permeation_probability</span> <span class="o">=</span> <span class="n">id_permeation_probabilities</span><span class="p">[</span><span class="n">identifier</span><span class="p">]</span> <span class="k">if</span> <span class="n">id_permeation_probabilities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span>
+                        <span class="n">permeation_probability</span> <span class="o">=</span> <span class="n">id_permeation_probabilities</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="k">if</span> <span class="n">id_permeation_probabilities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span>
 
                         <span class="c1">#generate vessel</span>
-                        <span class="n">vessel</span> <span class="o">=</span> <span class="n">vessel_class</span><span class="o">.</span><span class="n">from_random</span><span class="p">(</span>
+                        <span class="n">vessel</span><span class="p">:</span> <span class="n">BOLDvessel</span><span class="o">.</span><span class="n">Vessel2D</span> <span class="o">=</span> <span class="n">vessel_class</span><span class="o">.</span><span class="n">from_random</span><span class="p">(</span>
                             <span class="n">diameter</span><span class="o">=</span><span class="n">diameter</span><span class="p">,</span>
                             <span class="n">dchi</span><span class="o">=</span><span class="n">dchi</span><span class="p">,</span>
                             <span class="n">voxel_size</span><span class="o">=</span><span class="n">voxel</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
                             <span class="n">permeation_probability</span><span class="o">=</span><span class="n">permeation_probability</span><span class="p">,</span>
-                            <span class="n">identifier</span><span class="o">=</span><span class="n">identifier</span><span class="p">,</span>
+                            <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
                             <span class="n">rng</span><span class="o">=</span><span class="n">voxel</span><span class="o">.</span><span class="n">rng</span>
                         <span class="p">)</span>                        
                         
@@ -297,7 +300,7 @@
                     <span class="n">voxel</span><span class="o">.</span><span class="n">add_vessel</span><span class="p">(</span><span class="n">vessel</span><span class="p">)</span>
                     
                     <span class="c1"># adding volume contribution from new vessel</span>
-                    <span class="n">current_CBV</span> <span class="o">+=</span> <span class="n">vessel</span><span class="o">.</span><span class="n">volume_percent</span>
+                    <span class="n">current_CBV</span> <span class="o">+=</span> <span class="n">vessel</span><span class="o">.</span><span class="n">volume_percent</span><span class="p">(</span><span class="n">voxel</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
                     
                     <span class="c1">#manual override of the progress bar</span>
                     <span class="n">progress_percentage</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">current_CBV</span> <span class="o">/</span> <span class="n">total_CBV</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> 
@@ -305,10 +308,10 @@
                     <span class="n">pbar</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">progress_percentage</span>
                     <span class="n">pbar</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-            <span class="c1"># final CBV stored</span>
-            <span class="n">voxel</span><span class="o">.</span><span class="n">real_CBV</span> <span class="o">=</span> <span class="n">current_CBV</span>
-
-            <span class="k">return</span> <span class="n">voxel</span></div></div>
+        <span class="c1"># final CBV stored</span>
+        <span class="n">voxel</span><span class="o">.</span><span class="n">real_CBV</span> <span class="o">=</span> <span class="n">current_CBV</span> 
+        
+        <span class="k">return</span> <span class="n">voxel</span></div></div>
 </pre></div>
 
            </div>
