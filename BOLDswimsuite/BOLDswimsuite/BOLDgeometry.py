@@ -531,8 +531,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
             vessel_index_grid=vessel_index_grid.astype(int),
             dBz_grid=dBz_grid,
             permeation_probability_list=permeation_probability_list,
-            size=size,
-            padding=padding
+            size=size
         )
 
     @staticmethod
