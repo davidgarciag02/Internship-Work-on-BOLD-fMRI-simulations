@@ -81,8 +81,7 @@ class InfiniteCylinder3DNumba:
         if np.linalg.norm(self.B0_projection_vector) == 0:
             self.B0_projection_vector = np.array([0.0,0.0,1.0])
 
-
-    def dBz_mask_from_positions(self, positions, B0):
+    def is_IV_dBz(self, positions, B0):
 
         # finding the distance between the central axis of the vessel and the point
         radial_vectors = self._radial_vectors_from_positions(positions)
@@ -189,28 +188,34 @@ class InfiniteCylinder3DNumba:
         
         return intersects
     
-    def volume_percent(self, voxel_size: float) -> float:
+    def volume_fraction(self, voxel_size: float) -> float:
         # calculate radius of the sphere around the voxel
         voxel_sphere_radius = 0.5 * np.sqrt(3) * voxel_size
 
-        r = np.linalg.norm(self.origin)
+        radial_vector_to_voxel_center = self._radial_vectors_from_positions(np.array([[0.,0.,0.]]))
 
+        #r = np.linalg.norm(radial_vector_to_voxel_center)
+        r = np.linalg.norm(radial_vector_to_voxel_center)
+        
         # calculate the estimated volume percent of the generated vessel
         height = 2 * np.sqrt(voxel_sphere_radius**2 - r**2)
         total_volume = 4 / 3 * np.pi * voxel_sphere_radius**3
         volume = height * np.pi * (self.diameter / 2)**2
-        volume_percent = volume / total_volume
+        volume_fraction = volume / total_volume
 
-        return volume_percent
+        return volume_fraction
 
     def _radial_vectors_from_positions(self, positions):
-
-        dot_product = np.dot(np.ascontiguousarray(positions),
-                            np.ascontiguousarray(self.normal_vector))
-
-        projected_positions = positions - np.expand_dims(dot_product, axis=1) * self.normal_vector
-        radial_vectors = self.origin - projected_positions
-        return radial_vectors
+        # https://math.stackexchange.com/questions/1905533/find-perpendicular-distance-from-point-to-line-in-3d
+        
+        # vector from origin to positions
+        v = positions-self.origin
+        # distance between origin and the positions projected onto the vessel axis
+        t = np.dot(np.ascontiguousarray(v), np.ascontiguousarray(self.normal_vector))
+        # projection of the positions onto the vessel axis
+        P = self.origin + np.expand_dims(t, axis=1)*self.normal_vector
+        
+        return positions-P
 
 class InfiniteCylinder3D:
     """Object containing all parameters for an infinite cylinder vessel
@@ -259,8 +264,8 @@ class InfiniteCylinder3D:
         dchi: float,
         voxel_size: float,
         permeation_probability: float=0,
-        label: str='None',
-        rng = np.random.default_rng()
+        label: str='',
+        rng: np.random.Generator = np.random.default_rng()
     ) -> InfiniteCylinder3DNumba:
 
         # calculate radius of the sphere around the voxel
@@ -346,7 +351,7 @@ class InfiniteCylinder2DNumba:
             self.B0_projection_vector = np.array([0.0,1.0])
 
 
-    def dBz_mask_from_positions(self, positions, B0):
+    def is_IV_dBz(self, positions, B0):
         radial_vectors=positions-self.origin
         radial_distances= np.sqrt(
             radial_vectors[:, 0]**2 + \
@@ -439,13 +444,13 @@ class InfiniteCylinder2DNumba:
         
         return intersects
     
-    def volume_percent(self, voxel_size: float) -> float:
+    def volume_fraction(self, voxel_size: float) -> float:
         total_volume = voxel_size**2
         vessel_volume = np.pi*(self.diameter/2)**2
         
-        volume_percent = vessel_volume/total_volume
+        volume_fraction = vessel_volume/total_volume
 
-        return volume_percent
+        return volume_fraction
 
     def _radial_distances_and_angles_from_positions(self, points):
 
@@ -472,7 +477,7 @@ class InfiniteCylinder2D:
         origin: np.ndarray, 
         dchi: float, 
         permeation_probability: float=0,
-        label: str='None',
+        label: str='',
     ):
     
         return InfiniteCylinder2DNumba(
@@ -491,8 +496,8 @@ class InfiniteCylinder2D:
         dchi: float,
         voxel_size: float,
         permeation_probability: float=0,
-        label: str='None',
-        rng = np.random.default_rng()
+        label: str='',
+        rng: np.random.Generator = np.random.default_rng()
     ) -> InfiniteCylinder3DNumba:
 
         origin = (rng.random(2)-0.5)*voxel_size
@@ -552,7 +557,7 @@ class Sphere3DNumba:
         self.dchi = dchi
         self.permeation_probability = permeation_probability  # for compatibility
 
-    def dBz_mask_from_positions(self, positions, B0):
+    def is_IV_dBz(self, positions, B0):
         # finding the phi angle and r distance for all points
         radial_distances, cos_thetas = self._radial_distances_and_angles(positions)
 
@@ -608,13 +613,13 @@ class Sphere3DNumba:
 
         return intersects
     
-    def volume_percent(self, voxel_size: float) -> float:
+    def volume_fraction(self, voxel_size: float) -> float:
         # calculate the estimated volume percent of the generated vessel
         total_volume = voxel_size**3
         sphere_volume = 4 / 3 * np.pi * (self.diameter / 2)**3
-        volume_percent = sphere_volume / total_volume
+        volume_fraction = sphere_volume / total_volume
 
-        return volume_percent
+        return volume_fraction
 
     def _radial_distances_and_angles(self, positions):
         # finding the distance between the center of the vessel and the point
@@ -647,7 +652,7 @@ class Sphere3D:
         origin: np.ndarray, 
         dchi: float, 
         permeation_probability: float=0,
-        label: str='None'
+        label: str=''
     ):
     
         return Sphere3DNumba(
@@ -664,8 +669,8 @@ class Sphere3D:
         dchi: float,
         voxel_size: float,
         permeation_probability: float=0,
-        label: str='None',
-        rng = np.random.default_rng()
+        label: str='',
+        rng: np.random.Generator = np.random.default_rng()
     ) -> InfiniteCylinder3DNumba:
 
         # generate a random point in the voxel

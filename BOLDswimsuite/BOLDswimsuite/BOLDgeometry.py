@@ -28,6 +28,9 @@ class Geometry:
     def permeates(self, vessel_index: int, random_float: float):
         pass
 
+    def get_CBV(self):
+        pass
+
 class ContinuousVoxel(Geometry):
     def __init__(
         self,
@@ -40,8 +43,6 @@ class ContinuousVoxel(Geometry):
         self.size: float = size
         self.B0 = B0
         self.rng = np.random.default_rng(seed)
-
-        self.real_CBV: float = 0
     
     def vessel_indices_from_positions(self, positions: np.ndarray):
         num_positions = positions.shape[0]
@@ -65,7 +66,7 @@ class ContinuousVoxel(Geometry):
         dBz = np.zeros(num_positions)
 
         for i, vessel in enumerate(self.vessels):
-            is_IV, dBz_EV, dBz_IV = vessel.dBz_mask_from_positions(positions, self.B0)
+            is_IV, dBz_EV, dBz_IV = vessel.is_IV_dBz(positions, self.B0)
             is_IV = np.logical_and(is_IV, np.logical_not(vessel_indices))
 
             vessel_indices[is_IV] = i+1
@@ -84,6 +85,14 @@ class ContinuousVoxel(Geometry):
         permeation_probability = self.vessels[vessel_index-1].permeation_probability
         permeates = random_float < permeation_probability
         return permeates
+    
+    def get_CBV(self):
+        CBV = 0
+
+        for vsl in self.vessels:
+            CBV += vsl.volume_fraction(self.size)
+
+        return CBV
 
 
 class ContinuousVoxel3D(ContinuousVoxel):
@@ -198,16 +207,13 @@ class ContinuousVoxel3D(ContinuousVoxel):
                     voxel.add_vessel(vessel)
                     
                     # adding volume contribution from new vessel
-                    current_CBV += vessel.volume_percent(voxel.size)
+                    current_CBV += vessel.volume_fraction(voxel.size)
                     
                     #manual override of the progress bar
                     progress_percentage = int(current_CBV / total_CBV * 100) 
                     progress_percentage = 100 if progress_percentage > 100 else progress_percentage
                     pbar.n = progress_percentage
                     pbar.refresh()
-
-            # final CBV stored
-            voxel.real_CBV = current_CBV
 
         return voxel
 
@@ -321,16 +327,13 @@ class ContinuousVoxel2D(ContinuousVoxel):
                     voxel.add_vessel(vessel)
                     
                     # adding volume contribution from new vessel
-                    current_CBV += vessel.volume_percent(voxel.size)
+                    current_CBV += vessel.volume_fraction(voxel.size)
                     
                     #manual override of the progress bar
                     progress_percentage = round(current_CBV / total_CBV * 100) 
                     progress_percentage = 100 if progress_percentage > 100 else progress_percentage
                     pbar.n = progress_percentage
                     pbar.refresh()
-
-        # final CBV stored
-        voxel.real_CBV = current_CBV
         
         return voxel
 
@@ -396,6 +399,11 @@ class DiscreteVoxel(Geometry):
         permeation_probability = self.permeation_probability_list[vessel_index-1]
         permeates = random_float < permeation_probability
         return permeates
+    
+    def get_CBV(self):
+        CBV = np.count_nonzero(self.vessel_index_grid)/self.vessel_index_grid.size
+
+        return CBV
 
 class DiscreteVoxel3D(DiscreteVoxel):
 
@@ -423,7 +431,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
         size = voxel.size
 
         linear_coord = np.linspace(-size/2, size/2, N)
-        X, Y, Z = np.meshgrid(linear_coord, linear_coord, linear_coord)
+        X, Y, Z = np.meshgrid(linear_coord, linear_coord, linear_coord, indexing='ij')
 
         linear_positions = np.stack((X.ravel(), Y.ravel(), Z.ravel()), axis=1)
 
@@ -446,21 +454,19 @@ class DiscreteVoxel3D(DiscreteVoxel):
         cls,
         N: int,
         voxel: ContinuousVoxel,
-        extend: bool=False,
         padding: int=0,
-        progressbar: bool=True
+        extend: bool=False,
     ):
         size = voxel.size
+        subvox_size = size/N
 
         N = N + 2*padding if extend else N
 
         vessel_index_grid = np.zeros((N,N,N), dtype=int)
         grid_dchi = np.zeros((N,N,N))
 
-        text = 'Creating Offset Grid'
-        for vsl_counter, vsl in tqdm(enumerate(voxel.vessels), total=len(voxel.vessels), desc=text, disable=not progressbar):
-
-            subvox_size = size/N
+        for vsl_counter, vsl in enumerate(voxel.vessels):
+            
             is_IV = vsl.grid_is_IV(N, subvox_size)
 
             mask_tmp = np.logical_and(np.logical_not(vessel_index_grid), is_IV)
@@ -483,9 +489,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
             vessel_index_grid=vessel_index_grid,
             dBz_grid=dBz_grid,
             permeation_probability_list=permeation_probability_list,
-            size=size,
-
-            padding=padding
+            size=size
         )
     
     @classmethod
@@ -533,6 +537,31 @@ class DiscreteVoxel3D(DiscreteVoxel):
             permeation_probability_list=permeation_probability_list,
             size=size
         )
+    
+    @classmethod
+    def from_vessel_index_grid_FFT(
+        cls,
+        vessel_index_grid: np.ndarray,
+        dchi_list: List[float],
+        permeation_probability_list: List[float],
+        size: float,
+        B0: float,
+        padding: int=0
+    ):
+
+        grid_dchi = np.array(vessel_index_grid, dtype=float)
+
+        for i, dchi in enumerate(dchi_list):
+            grid_dchi[grid_dchi == i+1] = dchi
+        
+        dBz_grid = cls.dchi_mask_to_dBz_FFT(grid_dchi, padding, B0)
+
+        return cls(
+            vessel_index_grid=vessel_index_grid.astype(int),
+            dBz_grid=dBz_grid,
+            permeation_probability_list=permeation_probability_list,
+            size=size
+        )
 
     @staticmethod
     def dchi_mask_to_dBz_FFT(
@@ -548,7 +577,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
         else:
             pos_range = np.linspace(-half_N + 1, half_N, N)
         
-        X, Y, Z = np.meshgrid(pos_range, pos_range, pos_range)
+        X, Y, Z = np.meshgrid(pos_range, pos_range, pos_range, indexing='ij')
         r_squared = X**2 + Y**2 + Z**2
 
         zeros_indices = np.where(r_squared == 0)
@@ -605,7 +634,7 @@ class DiscreteVoxel2D(DiscreteVoxel):
         size = voxel.size
 
         linear_coord = np.linspace(-size/2, size/2, N)
-        X, Y = np.meshgrid(linear_coord, linear_coord)
+        X, Y = np.meshgrid(linear_coord, linear_coord, indexing='ij')
 
         linear_positions = np.stack((X.ravel(), Y.ravel()), axis=1)
 
