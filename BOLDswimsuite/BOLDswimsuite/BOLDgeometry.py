@@ -6,14 +6,11 @@ from typing import  List, Dict, Optional, Tuple, Union
 from tqdm import tqdm
 from . import BOLDvessel
 
-#TODO: delete BOLDvoxel and BOLDgrid
-
 def size_from_k(diameter: float, k: float, ADC: float, dt: float) -> float:
     
     A = np.sqrt(2 * ADC * dt / 1000)
    
     return 2 * (A + k * diameter / 2)
-
 
 class Geometry:
     def vessel_indices_from_positions(self, positions: np.ndarray):
