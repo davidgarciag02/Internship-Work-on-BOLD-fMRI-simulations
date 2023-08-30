@@ -222,8 +222,6 @@ class InfiniteCylinder3D:
 
     Parameters
     ----------
-    label : str
-        string to identify the vessel.
     diameter : float
         vessel diameter (mm)
     theta : float
@@ -236,6 +234,8 @@ class InfiniteCylinder3D:
         susceptibility difference between the vessel and the surrounding tissue (cgs units)
     permeation_probability : float
         probability for a spin to permeate through the vesel wall (fraction of 1)
+    label : str
+        string to identify the vessel.
     """
     def __new__(
         cls,

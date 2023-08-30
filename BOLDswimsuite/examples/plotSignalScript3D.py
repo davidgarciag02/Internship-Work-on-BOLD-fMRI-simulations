@@ -6,12 +6,12 @@ from tqdm import tqdm
 
 def main():
 
-    vessel_diameter = 0.2
+    vessel_diameter = 0.002
     nsteps = 600
 
     size = BOLDgeometry.size_from_k(
         diameter=vessel_diameter, 
-        k=20,
+        k=80,
         ADC=0.001,
         dt=0.2
     )
@@ -21,10 +21,10 @@ def main():
         CBV=0.02,
         B0=3,
         labels=['vsl1'],
-        id_weights={'vsl1':1},
-        id_diameters={'vsl1':[vessel_diameter]},
-        id_dchis={'vsl1':3e-8},
-        id_permeation_probabilities={'vsl1':0},
+        weights={'vsl1':1},
+        diameter_distributions={'vsl1':[vessel_diameter]},
+        dchis={'vsl1':3e-8},
+        permeation_probabilities={'vsl1':0},
         vessel_type='cylinder',
         allow_vessel_intersection=True,
         seed=1,
@@ -38,7 +38,7 @@ def main():
         
     spins = BOLDspins.Spins3D(
         ADC=0.001,
-        num_spins=1_000,
+        num_spins=10_000,
         geometry=voxel,
         dt=0.2,
         IV=True,

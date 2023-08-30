@@ -13,6 +13,10 @@ def size_from_k(diameter: float, k: float, ADC: float, dt: float) -> float:
     return 2 * (A + k * diameter / 2)
 
 class Geometry:
+    
+    def __init__(self, ndims: int):
+        self._ndims = ndims
+
     def vessel_indices_from_positions(self, positions: np.ndarray):
         pass
     
@@ -28,20 +32,28 @@ class Geometry:
     def get_CBV(self):
         pass
 
+    def _validate_positions(self, positions: np.ndarray):
+        if len(positions.shape) == 2 and positions.shape[1] == self._ndims and issubclass(positions.dtype.type, np.floating):
+            return
+        raise Exception(f'\'positions\' must be a Numpy floating point array or shape (N, {self._ndims})')
+
 class ContinuousVoxel(Geometry):
+    
     def __init__(
         self,
+        ndims: int,
         size: float,
         B0: float,
-        vessels: Optional[Union[List[BOLDvessel.Vessel3D], List[BOLDvessel.Vessel2D]]]=None,
-        seed: Optional[int]=None
+        vessels: Optional[Union[List[BOLDvessel.Vessel3D], List[BOLDvessel.Vessel2D]]]=None
     ):
         self.vessels = vessels if vessels is not None else []
         self.size: float = size
         self.B0 = B0
-        self.rng = np.random.default_rng(seed)
+        self._ndims = ndims
     
     def vessel_indices_from_positions(self, positions: np.ndarray):
+        self._validate_positions(positions)
+
         num_positions = positions.shape[0]
 
         # checks if new spin positions are IV and calculates dBz and phase
@@ -56,6 +68,8 @@ class ContinuousVoxel(Geometry):
         return vessel_indices
     
     def dBz_vessel_indices_from_positions(self, positions: np.ndarray):
+        self._validate_positions(positions)
+
         num_positions = positions.shape[0]
 
         # checks if new spin positions are IV and calculates dBz and phase
@@ -72,6 +86,8 @@ class ContinuousVoxel(Geometry):
         return dBz, vessel_indices
     
     def wrap_boundary_positions(self, positions: np.ndarray):
+        self._validate_positions(positions)
+        
         positions += self.size * \
             (1 * (positions < -0.5 * self.size) - \
                 1 * (positions > 0.5 * self.size))
@@ -98,14 +114,13 @@ class ContinuousVoxel3D(ContinuousVoxel):
         self,
         size: float,
         B0: float,
-        vessels: Optional[BOLDvessel.Vessel3D]=None,
-        seed: Optional[int]=None
+        vessels: Optional[BOLDvessel.Vessel3D]=None
     ):  
         super().__init__(
+            ndims=3,
             size=size,
             B0=B0,
-            vessels=vessels,
-            seed=seed
+            vessels=vessels
         )
 
     def add_vessel(
@@ -123,20 +138,21 @@ class ContinuousVoxel3D(ContinuousVoxel):
         CBV: float,
         B0: float,
         labels: List[str],
-        id_weights: Dict[str, float],
-        id_diameters: Dict[str, List[float]],
-        id_dchis: Dict[str, float],
-        id_permeation_probabilities: Optional[Dict[str, float]]=None,
+        weights: Dict[str, float],
+        diameter_distributions: Dict[str, List[float]],
+        dchis: Dict[str, float],
+        permeation_probabilities: Optional[Dict[str, float]]=None,
         vessel_type: str='cylinder',
         allow_vessel_intersection: bool = True,
         seed: Optional[int]=None,
         progressbar: bool=True
     ) -> ContinuousVoxel:
 
+        rng = np.random.default_rng(seed)
+
         voxel = cls(
             size=size,
-            B0=B0,
-            seed=seed
+            B0=B0
         )
 
         str2vessel_class = {
@@ -151,7 +167,7 @@ class ContinuousVoxel3D(ContinuousVoxel):
         
         total_weight = 0 # initializing total CBV weight
         for label in labels:
-            total_weight += id_weights[label]
+            total_weight += weights[label]
 
         text = 'Populating Voxel'
         with tqdm(total=100, desc=text, disable=not progressbar) as pbar:
@@ -159,7 +175,7 @@ class ContinuousVoxel3D(ContinuousVoxel):
             # iterating through all vessel types
             for label in labels:
                 # CBV occupied by the current vessel type
-                type_CBV = CBV * id_weights[label] / total_weight
+                type_CBV = CBV * weights[label] / total_weight
                 # target CBV incremented by the vessel type's CBV
                 total_CBV += type_CBV
 
@@ -171,14 +187,14 @@ class ContinuousVoxel3D(ContinuousVoxel):
                     counter = 0
                     while vessel_intersects:
                         # picks diameter
-                        diameters = id_diameters[label]
-                        diameter = voxel.rng.choice(diameters)
+                        diameters = diameter_distributions[label]
+                        diameter = rng.choice(diameters)
 
                         # picks dChi
-                        dchi = id_dchis[label]
+                        dchi = dchis[label]
 
                         # picks permeation probability
-                        permeation_probability = id_permeation_probabilities[label] if id_permeation_probabilities is not None else 0.0
+                        permeation_probability = permeation_probabilities[label] if permeation_probabilities is not None else 0.0
 
                         #generate vessel
                         vessel: BOLDvessel.Vessel3D = vessel_class.from_random(
@@ -187,7 +203,7 @@ class ContinuousVoxel3D(ContinuousVoxel):
                             voxel_size=voxel.size,
                             permeation_probability=permeation_probability,
                             label=label,
-                            rng=voxel.rng
+                            rng=rng
                         )                        
                         
                         #check that vessel does not intersect other vessels
@@ -220,14 +236,13 @@ class ContinuousVoxel2D(ContinuousVoxel):
         self,
         size: float,
         B0: float,
-        vessels: Optional[BOLDvessel.Vessel2D]=None,
-        seed: Optional[int]=None
+        vessels: Optional[BOLDvessel.Vessel2D]=None
     ):  
         super().__init__(
+            ndims=2,
             size=size,
             B0=B0,
-            vessels=vessels,
-            seed=seed
+            vessels=vessels
         )
     
     def add_vessel(
@@ -245,20 +260,21 @@ class ContinuousVoxel2D(ContinuousVoxel):
         CBV: float,
         B0: float,
         labels: List[str],
-        id_weights: Dict[str, float],
-        id_diameters: Dict[str, List[float]],
-        id_dchis: Dict[str, float],
-        id_permeation_probabilities: Optional[Dict[str, float]]=None,
+        weights: Dict[str, float],
+        diameters_distributions: Dict[str, List[float]],
+        dchis: Dict[str, float],
+        permeation_probabilities: Optional[Dict[str, float]]=None,
         vessel_type: str='cylinder',
         allow_vessel_intersection: bool = True,
         seed: Optional[int]=None,
         progressbar: bool=True
     ) -> ContinuousVoxel2D:
 
+        rng = np.random.default_rng(seed)
+
         voxel = cls(
             size=size,
-            B0=B0,
-            seed=seed
+            B0=B0
         )
 
         str2vessel_class = {
@@ -272,14 +288,14 @@ class ContinuousVoxel2D(ContinuousVoxel):
         
         total_weight = 0
         for label in labels:
-            total_weight += id_weights[label]
+            total_weight += weights[label]
 
         text = 'Populating Voxel'
         with tqdm(total=100, desc=text, disable=not progressbar) as pbar:
              # iterating through all vessel types
             for label in labels:
                 # CBV occupied by the current vessel type
-                type_CBV = CBV * id_weights[label] / total_weight
+                type_CBV = CBV * weights[label] / total_weight
                 # target CBV incremented by the vessel type's CBV
                 total_CBV += type_CBV
 
@@ -291,14 +307,14 @@ class ContinuousVoxel2D(ContinuousVoxel):
                     counter = 0
                     while vessel_intersects:
                         # picks diameter
-                        diameters = id_diameters[label]
-                        diameter = voxel.rng.choice(diameters)
+                        diameters = diameters_distributions[label]
+                        diameter = rng.choice(diameters)
 
                         # picks dChi
-                        dchi = id_dchis[label]
+                        dchi = dchis[label]
 
                         # picks permeation probability (impermeable if not set)
-                        permeation_probability = id_permeation_probabilities[label] if id_permeation_probabilities is not None else 0.0
+                        permeation_probability = permeation_probabilities[label] if permeation_probabilities is not None else 0.0
 
                         #generate vessel
                         vessel: BOLDvessel.Vessel2D = vessel_class.from_random(
@@ -307,7 +323,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
                             voxel_size=voxel.size,
                             permeation_probability=permeation_probability,
                             label=label,
-                            rng=voxel.rng
+                            rng=rng
                         )                        
                         
                         #check that vessel does not intersect other vessels
@@ -371,14 +387,16 @@ class DiscreteVoxel(Geometry):
         return grid_position_tuple
     
     def vessel_indices_from_positions(self, positions: np.ndarray):
-        
+        self._validate_positions(positions)
+
         grid_positions = self._position_to_grid(positions)
         vessel_indices = self.vessel_index_grid[grid_positions]
 
         return vessel_indices
     
     def dBz_vessel_indices_from_positions(self, positions: np.ndarray):
-        
+        self._validate_positions(positions)
+
         grid_positions = self._position_to_grid(positions)
         dBz = self.dBz_grid[grid_positions]
         vessel_indices = self.vessel_index_grid[grid_positions]
@@ -386,6 +404,8 @@ class DiscreteVoxel(Geometry):
         return dBz, vessel_indices
     
     def wrap_boundary_positions(self, positions: np.ndarray):
+        self._validate_positions(positions)
+
         positions += self.size * \
             (1 * (positions < -0.5 * self.size) - \
                 1 * (positions > 0.5 * self.size))

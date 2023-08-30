@@ -10,8 +10,7 @@ class Sequence:
         num_samples: int,
         pulse_time_indices: List[int],
         pulse_angles: List[float],
-        pulse_axes: List[List[float]],
-        dB0: float=0,
+        pulse_axes: List[List[float]]
     ):
         self._curr_step = 0
         self._curr_pulse = 0
@@ -19,7 +18,6 @@ class Sequence:
         self.pulse_time_indices = pulse_time_indices
         self.pulse_angles = pulse_angles
         self.pulse_axes = pulse_axes
-        self.dB0 = dB0
 
         self.Mx = np.zeros(num_samples)
         self.My = np.zeros(num_samples)
@@ -43,14 +41,13 @@ class Sequence:
         dt: float
     ):
 
-        # time and space independent offset
-        phase = self._offset_all(phase, self.dB0, dt)
-
         # apply inital pulse to the spins
         if self._curr_step in self.pulse_time_indices:
             self._apply_pulse()
+            self._curr_pulse += 1
 
         self._apply_dephasing(phase)
+        self._curr_step += 1
 
         # calculating the transverse magnetization using the complex notation
         Mxy = self.Mx + 1j * self.My
@@ -66,23 +63,12 @@ class Sequence:
         self,
         spins: BOLDspins.Spins,
     ):
-        phase, is_IV, dt = spins.get_phase_is_IV_dt()
+        phase, vessel_index, dt = spins.get_phase_vessel_indices_dt()
         self.step(
             phase=phase, 
-            is_IV=is_IV, 
+            is_IV=vessel_index != 0, 
             dt=dt
         )
-
-    def _offset_all(
-        self,
-        phase: np.ndarray,
-        dB0: float,
-        dt: float
-    ) -> np.ndarray:
-
-        phase += 2 * np.pi * GYROMAGNETIC_RATIO * dB0 * (dt * 0.001)
-
-        return phase
 
     def _apply_pulse(
         self,
@@ -110,8 +96,6 @@ class Sequence:
         self.My = v * term + y * cangle + (w * x - u * z) * sangle
         self.Mz = w * term + z * cangle + (-v * x + u * y) * sangle
 
-        self._curr_pulse += 1
-
     def _apply_dephasing(
         self,
         phase: np.ndarray,
@@ -125,4 +109,3 @@ class Sequence:
 
         self.Mx = x * cphase - y * sphase
         self.My = x * sphase + y * cphase
-        self._curr_step += 1

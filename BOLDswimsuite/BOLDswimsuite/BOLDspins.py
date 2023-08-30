@@ -105,8 +105,8 @@ class Spins:
         self.positions = new_positions
         self.vessel_indices = new_vessel_indices
 
-    def get_phase_is_IV_dt(self) -> Tuple[np.ndarray, np.ndarray, float]:
-        return self.phase, self.vessel_indices != 0, self.dt
+    def get_phase_vessel_indices_dt(self) -> Tuple[np.ndarray, np.ndarray, float]:
+        return self.phase, self.vessel_indices, self.dt
 
     def _place_spins(
         self,
