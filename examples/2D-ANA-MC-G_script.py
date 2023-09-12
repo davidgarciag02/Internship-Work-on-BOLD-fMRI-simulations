@@ -11,12 +11,12 @@ def main():
 
     size = BOLDgeometry.size_from_k(
         diameter=vessel_diameter, 
-        k=80,
+        k=40,
         ADC=0.001,
         dt=0.2
     )
     
-    voxel = BOLDgeometry.ContinuousVoxel3D.from_random(
+    continuous_voxel = BOLDgeometry.ContinuousVoxel2D.from_random(
         size=size,
         CBV=0.02,
         B0=3,
@@ -31,15 +31,15 @@ def main():
         progressbar=True
     )
 
-    # grid = BOLDgeometry.DiscreteVoxel3D.from_continuous_analytical(
-    #     N=400,
-    #     voxel=voxel
-    # )
+    discrete_voxel = BOLDgeometry.DiscreteVoxel2D.from_continuous_analytical(
+        N=200,
+        voxel=continuous_voxel
+    )
         
-    spins = BOLDspins.Spins3D(
+    spins = BOLDspins.Spins2D(
         ADC=0.001,
         num_spins=10_000,
-        geometry=voxel,
+        geometry=discrete_voxel,
         dt=0.2,
         IV=True,
         seed=1
@@ -49,8 +49,7 @@ def main():
         num_samples=spins.num_spins,
         pulse_time_indices=[0,175],
         pulse_angles=[np.pi/2,np.pi],
-        pulse_axes=[[np.pi/2, np.pi/2], [np.pi/2, 0]],
-        dB0=0          
+        pulse_axes=[[np.pi/2, np.pi/2], [np.pi/2, 0]]       
     )
 
     eviv = np.zeros(nsteps)
@@ -66,7 +65,7 @@ def main():
     time_range = np.arange(0, nsteps * spins.dt, spins.dt)
 
     #printing number of vessels
-    print('Number of vessels:', len(voxel.vessels))
+    print('Number of vessels:', len(continuous_voxel.vessels))
 
     #plotting
     f, (ax1,ax2,ax3) = plt.subplots(nrows=1, ncols=3, figsize=(15,5))

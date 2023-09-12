@@ -4,50 +4,18 @@ BOLDswimsuite package
 Submodules
 ----------
 
-BOLDswimsuite.BOLDconstants module
-----------------------------------
+BOLDswimsuite.BOLDvessel module
+-------------------------------
 
-.. automodule:: BOLDswimsuite.BOLDconstants
+.. automodule:: BOLDswimsuite.BOLDvessel
    :members:
    :undoc-members:
    :show-inheritance:
 
-BOLDswimsuite.BOLDdeterministic module
---------------------------------------
-
-.. automodule:: BOLDswimsuite.BOLDdeterministic
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-BOLDswimsuite.BOLDgrid module
------------------------------
-
-.. automodule:: BOLDswimsuite.BOLDgrid
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-BOLDswimsuite.BOLDparameters module
------------------------------------
-
-.. automodule:: BOLDswimsuite.BOLDparameters
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-BOLDswimsuite.BOLDsequence module
+BOLDswimsuite.BOLDgeometry module
 ---------------------------------
 
-.. automodule:: BOLDswimsuite.BOLDsequence
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-BOLDswimsuite.BOLDsimulation module
------------------------------------
-
-.. automodule:: BOLDswimsuite.BOLDsimulation
+.. automodule:: BOLDswimsuite.BOLDgeometry
    :members:
    :undoc-members:
    :show-inheritance:
@@ -60,18 +28,26 @@ BOLDswimsuite.BOLDspins module
    :undoc-members:
    :show-inheritance:
 
-BOLDswimsuite.BOLDvessel module
--------------------------------
+BOLDswimsuite.BOLDsequence module
+---------------------------------
 
-.. automodule:: BOLDswimsuite.BOLDvessel
+.. automodule:: BOLDswimsuite.BOLDsequence
    :members:
    :undoc-members:
    :show-inheritance:
 
-BOLDswimsuite.BOLDvoxel module
-------------------------------
+BOLDswimsuite.BOLDconstants module
+----------------------------------
 
-.. automodule:: BOLDswimsuite.BOLDvoxel
+.. automodule:: BOLDswimsuite.BOLDconstants
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+BOLDswimsuite.BOLDdeterministic module
+--------------------------------------
+
+.. automodule:: BOLDswimsuite.BOLDdeterministic
    :members:
    :undoc-members:
    :show-inheritance:

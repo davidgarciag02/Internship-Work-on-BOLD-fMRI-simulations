@@ -1,5 +1,5 @@
-BOLDswimsuit
-============
+BOLDswimsuite
+=============
 
 .. toctree::
    :maxdepth: 4

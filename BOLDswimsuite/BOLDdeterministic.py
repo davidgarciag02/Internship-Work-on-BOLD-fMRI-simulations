@@ -2,7 +2,8 @@ from scipy import signal as spsig
 import scipy as sp
 import numpy as np
 from tqdm import tqdm
-from . import BOLDgrid, BOLDsequence
+from . import BOLDgeometry, BOLDsequence
+from .BOLDconstants import *
 
 class DeterministicDiffuser2D:
 
@@ -24,7 +25,7 @@ class DeterministicDiffuser2D:
 
     def signal(
         self, 
-        grid: BOLDgrid.Grid2D, 
+        grid: BOLDgeometry.DiscreteVoxel2D, 
         sequence: BOLDsequence.Sequence,
         kernel_type: str='ModifiedBessel', 
         cplx: bool=False, 
@@ -33,9 +34,12 @@ class DeterministicDiffuser2D:
     ):        
         self.N = grid.N
         self.size = grid.size
-        IV_mask = grid.mask > 0
+        IV_mask = grid.vessel_index_grid > 0
         EV_mask = np.logical_not(IV_mask)
-        phase = grid.phase
+
+        phase_conversion_factor = 2 * np.pi * GYROMAGNETIC_RATIO * self.dt * 0.001
+
+        phase = grid.dBz_grid * phase_conversion_factor
 
         signalEV = np.zeros(self.num_dt+1) + 0j
         signalIV = np.zeros(self.num_dt+1) + 0j

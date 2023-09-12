@@ -1,5 +1,7 @@
 import numpy as np
 from typing import Optional, List, Tuple, Union
+from tqdm import tqdm
+import warnings
 from .BOLDconstants import *
 from . import BOLDspins
 
@@ -37,8 +39,7 @@ class Sequence:
     def step(
         self,
         phase: np.ndarray,
-        is_IV: np.ndarray,
-        dt: float
+        is_IV: np.ndarray
     ):
 
         # apply inital pulse to the spins
@@ -66,9 +67,31 @@ class Sequence:
         phase, vessel_index, dt = spins.get_phase_vessel_indices_dt()
         self.step(
             phase=phase, 
-            is_IV=vessel_index != 0, 
-            dt=dt
+            is_IV=vessel_index != 0
         )
+
+    def spins_walk(
+        self,
+        spins: BOLDspins.Spins,
+        dt: float,
+        num_steps: int,
+        progressbar: bool=True
+    ):
+        if self._curr_step != 0:
+            warnings.warn('The walk is not on the 0th step of the sequence!')
+
+        eviv = np.zeros(num_steps) 
+        ev = np.zeros(num_steps)
+        iv = np.zeros(num_steps)
+
+        text = 'Walking Through'
+        for j in tqdm(range(num_steps), desc=text, disable=not progressbar):
+            spins.step(dt=dt)
+            self.spins_step(spins=spins)
+
+        eviv[j], ev[j], iv[j] = self.get_signals(cplx=False)
+
+        return eviv, ev, iv
 
     def _apply_pulse(
         self,

@@ -17,22 +17,92 @@ class Geometry:
     def __init__(self, ndims: int):
         self._ndims = ndims
 
-    def vessel_indices_from_positions(self, positions: np.ndarray):
+    def vessel_indices_from_positions(self, positions: np.ndarray) -> np.ndarray:
+        """Given an array of positions, returns the vessel index of each position.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+
+        Returns
+        -------
+        np.ndarray
+            Array with the vessel index of each position.
+        """        
         pass
     
-    def dBz_vessel_indices_from_positions(self, positions: np.ndarray):
+    def dBz_vessel_indices_from_positions(self, positions: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """Given an array of positions, returns both the dBz magnetic field offset and the vessel index of each position.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray]
+            2 element Tuple. The first element is an array with the dBz magnetic field offset of each position. The second element is an array with the vessel index of each position.
+        """     
         pass
     
-    def wrap_boundary_positions(self, positions: np.ndarray):
+    def wrap_boundary_positions(self, positions: np.ndarray) -> np.ndarray:
+        """Given an array of position, returns an array of positions where any positions outside the boundaries of the voxel are wrapped to the other side. Any positions that are not out-of-bounds are left untouched.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+
+        Returns
+        -------
+        np.ndarray
+            Array of wrapped positions.
+        """        
         pass
     
-    def permeates(self, vessel_index: int, random_float: float):
+    def permeates(self, vessel_index: int, random_sample: Optional[float] = None) -> bool:
+        """Given a vessel index, returns whether the vessel corresponding to the vessel index is permeated.
+
+        Parameters
+        ----------
+        vessel_index : int
+            Vessel index of the desired vessel.
+        random_sample : Optional[float], optional
+            A float within the interval [0.0, 1.0). By default, a valid random number will be generated.
+
+        Returns
+        -------
+        bool
+            Whether the vessel is permeated.
+        """    
         pass
 
-    def get_CBV(self):
+    def get_CBV(self) -> float:
+        """Returns the estimated Cerebral Blood Volume, or the volume fraction of vessels within the voxel.
+
+        Returns
+        -------
+        float
+            Estimated Cerebral Blood Volume.
+        """        
         pass
 
-    def _validate_positions(self, positions: np.ndarray):
+    def _validate_positions(self, positions: np.ndarray) -> None:
+        """Validates the `position` argument for other functions in `Geometry`.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+
+        Raises
+        ------
+        Exception
+            Occurs when an invalid `positions` argument has been provided.
+        """  
+
         if len(positions.shape) == 2 and positions.shape[1] == self._ndims and issubclass(positions.dtype.type, np.floating):
             return
         raise Exception(f'\'positions\' must be a Numpy floating point array or shape (N, {self._ndims})')
@@ -51,7 +121,7 @@ class ContinuousVoxel(Geometry):
         self.B0 = B0
         self._ndims = ndims
     
-    def vessel_indices_from_positions(self, positions: np.ndarray):
+    def vessel_indices_from_positions(self, positions: np.ndarray) -> np.ndarray:   
         self._validate_positions(positions)
 
         num_positions = positions.shape[0]
@@ -67,7 +137,7 @@ class ContinuousVoxel(Geometry):
 
         return vessel_indices
     
-    def dBz_vessel_indices_from_positions(self, positions: np.ndarray):
+    def dBz_vessel_indices_from_positions(self, positions: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         self._validate_positions(positions)
 
         num_positions = positions.shape[0]
@@ -85,7 +155,7 @@ class ContinuousVoxel(Geometry):
 
         return dBz, vessel_indices
     
-    def wrap_boundary_positions(self, positions: np.ndarray):
+    def wrap_boundary_positions(self, positions: np.ndarray) -> np.ndarray:
         self._validate_positions(positions)
         
         positions += self.size * \
@@ -94,12 +164,15 @@ class ContinuousVoxel(Geometry):
         
         return positions
     
-    def permeates(self, vessel_index: int, random_float: float):
+    def permeates(self, vessel_index: int, random_sample: Optional[float] = None) -> bool:
+        
+        if random_sample is None: random_sample = np.random.random()
+
         permeation_probability = self.vessels[vessel_index-1].permeation_probability
-        permeates = random_float < permeation_probability
+        permeates = random_sample < permeation_probability
         return permeates
     
-    def get_CBV(self):
+    def get_CBV(self) -> float:
         CBV = 0
 
         for vsl in self.vessels:
@@ -261,7 +334,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
         B0: float,
         labels: List[str],
         weights: Dict[str, float],
-        diameters_distributions: Dict[str, List[float]],
+        diameter_distributions: Dict[str, List[float]],
         dchis: Dict[str, float],
         permeation_probabilities: Optional[Dict[str, float]]=None,
         vessel_type: str='cylinder',
@@ -307,7 +380,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
                     counter = 0
                     while vessel_intersects:
                         # picks diameter
-                        diameters = diameters_distributions[label]
+                        diameters = diameter_distributions[label]
                         diameter = rng.choice(diameters)
 
                         # picks dChi
@@ -386,7 +459,7 @@ class DiscreteVoxel(Geometry):
 
         return grid_position_tuple
     
-    def vessel_indices_from_positions(self, positions: np.ndarray):
+    def vessel_indices_from_positions(self, positions: np.ndarray) -> np.ndarray:
         self._validate_positions(positions)
 
         grid_positions = self._position_to_grid(positions)
@@ -394,7 +467,7 @@ class DiscreteVoxel(Geometry):
 
         return vessel_indices
     
-    def dBz_vessel_indices_from_positions(self, positions: np.ndarray):
+    def dBz_vessel_indices_from_positions(self, positions: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         self._validate_positions(positions)
 
         grid_positions = self._position_to_grid(positions)
@@ -403,7 +476,7 @@ class DiscreteVoxel(Geometry):
 
         return dBz, vessel_indices
     
-    def wrap_boundary_positions(self, positions: np.ndarray):
+    def wrap_boundary_positions(self, positions: np.ndarray) -> np.ndarray:
         self._validate_positions(positions)
 
         positions += self.size * \
@@ -412,12 +485,15 @@ class DiscreteVoxel(Geometry):
         
         return positions
     
-    def permeates(self, vessel_index: int, random_float: float):
+    def permeates(self, vessel_index: int, random_sample: Optional[float] = None) -> bool:
+        
+        if random_sample is None: random_sample = np.random.random()
+
         permeation_probability = self.permeation_probability_list[vessel_index-1]
-        permeates = random_float < permeation_probability
+        permeates = random_sample < permeation_probability
         return permeates
     
-    def get_CBV(self):
+    def get_CBV(self) -> float:
         CBV = np.count_nonzero(self.vessel_index_grid)/self.vessel_index_grid.size
 
         return CBV

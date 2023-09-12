@@ -3,11 +3,11 @@ BOLDvessel
 
 Module containing all analytically-defined vessel types.
 """
-
+from __future__ import annotations
 import numpy as np
 from numba import float64, uint8, types   # import the types
 from numba.experimental import jitclass
-from typing import Union
+from typing import Union, Tuple
 
 spec_infinite_cylinder_3D = [
     ('label', types.unicode_type),
@@ -34,7 +34,7 @@ class InfiniteCylinder3DNumba:
         dchi, 
         permeation_probability
     ):
-        """Object containing all parameters for an infinite cylinder vessel
+        """Analytically-defined infinite cylinder vessel geometry.
 
         Parameters
         ----------
@@ -81,7 +81,23 @@ class InfiniteCylinder3DNumba:
         if np.linalg.norm(self.B0_projection_vector) == 0:
             self.B0_projection_vector = np.array([0.0,0.0,1.0])
 
-    def is_IV_dBz(self, positions, B0):
+    def is_IV_dBz(self, positions: np.ndarray, B0: float) -> Tuple[np.ndarray, np.ndarray, float]:
+        """Given an array of positions and a magnetic field strength for B0, returns whether the positions are intravascular and the dBz magnetic field offset.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+        B0 : float
+            B0 magnetic field strength (Tesla).
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray, float]
+            3 element Tuple. The first element is a boolean array, indicating for each position if it is intravascular. The second element is an array with the extravascular dBz magnetic field offset of each position. The thrid element is the intravascular dBz magnetic offset (a single value as it is constant). 
+            
+            Note that the extravascular dBz is also provided for intravascular positions. In most cases this can be ignored, but is sometimes required during simulations. 
+        """      
 
         # finding the distance between the central axis of the vessel and the point
         radial_vectors = self._radial_vectors_from_positions(positions)
@@ -105,7 +121,6 @@ class InfiniteCylinder3DNumba:
         # calculating field offset using the appropriate equation (dchi in cgs, angles in radians, lengths in mm)
         dBz_EV = B0*2*np.pi*self.dchi*(0.5*self.diameter/radial_distances)**2*cos2_phis*(np.sin(self.theta))**2
         
-        #TODO add this everywhere
         # some vessel intersection may cause spins to use EV values for dBz even when they are IV
         # this makes all IV values in the dBzEV equal to the value at the vessel boundary where
         # "0.5*self.diameter == radial_distance_magnitudes"
@@ -115,7 +130,19 @@ class InfiniteCylinder3DNumba:
 
         return is_IV, dBz_EV, dBz_IV
 
-    def is_IV(self, positions):
+    def is_IV(self, positions: np.ndarray) -> np.ndarray:
+        """Given an array of positions, returns whether the positions are intravascular.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array, indicating for each position if it is intravascular.
+        """  
 
         # check if the point(s) are inside the vessel using the cylinder equation
         vectors = self._radial_vectors_from_positions(positions)
@@ -143,7 +170,23 @@ class InfiniteCylinder3DNumba:
 
         return is_IV
 
-    def dBz_EV(self, positions, B0):
+    def dBz_EV(self, positions: np.ndarray, B0: float) -> np.ndarray:
+        """Given an array of positions and a magnetic field strength for B0, returns the extravascular dBz magnetic field offset.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+        B0 : float
+            B0 magnetic field strength (Tesla).
+
+        Returns
+        -------
+        np.ndarray
+            Array with the extravascular dBz magnetic field offset of each position.
+            
+            Note that the extravascular dBz is also provided for intravascular positions. In most cases this can be ignored, but is sometimes required during simulations. 
+        """   
 
         # finding the distance between the central axis of the vessel and the point
         radial_vectors = self._radial_vectors_from_positions(positions)
@@ -170,11 +213,36 @@ class InfiniteCylinder3DNumba:
 
         return dBz
 
-    def dBz_IV(self, B0):
+    def dBz_IV(self, B0: float) -> float:
+        """Given a magnetic field strength for B0, returns whether the positions are intravascular and the dBz magnetic field offset.
+
+        Parameters
+        ----------
+        B0 : float
+            B0 magnetic field strength (Tesla).
+
+        Returns
+        -------
+        float
+            The intravascular dBz magnetic offset.
+        """
+        
         dBz = B0*4/6*np.pi*self.dchi*(3*np.cos(self.theta)**2-1)
         return dBz
 
-    def intersects(self, other):
+    def intersects(self, other: InfiniteCylinder3DNumba) -> bool:
+        """Given another 3D infinite cylinder object, returns whether the two vessels intersect.
+
+        Parameters
+        ----------
+        other : InfiniteCylinder3DNumba
+            Another 3D infinite cylinder object.
+
+        Returns
+        -------
+        bool
+            Returns True if the vessels intersect and False otherwise.
+        """
 
         #calculating the shortest distance between the vessel axes
         cross = np.cross(self.normal_vector, other.normal_vector)
@@ -189,6 +257,18 @@ class InfiniteCylinder3DNumba:
         return intersects
     
     def volume_fraction(self, voxel_size: float) -> float:
+        """Given the side length of an isometric voxel, returns an estimate of the volume fraction that the vessel occupies in that space.
+
+        Parameters
+        ----------
+        voxel_size : float
+            Side length of the isometric voxel.
+
+        Returns
+        -------
+        float
+            Estimated volume fraction.
+        """        
         # calculate radius of the sphere around the voxel
         voxel_sphere_radius = 0.5 * np.sqrt(3) * voxel_size
 
@@ -218,24 +298,24 @@ class InfiniteCylinder3DNumba:
         return positions-P
 
 class InfiniteCylinder3D:
-    """Object containing all parameters for an infinite cylinder vessel
+    """Analytically-defined infinite cylinder vessel geometry. Wrapper for InfiniteCylinder3DNumba, to add functionality that is not compatible with Numba's jitclass.
 
     Parameters
     ----------
     diameter : float
-        vessel diameter (mm)
+        Vessel diameter (mm).
     theta : float
-        zenith angle of the vessel direction (radians)
+        Zenith angle of the vessel direction (radians).
     phi : float
-        azimuth angle of the vessel direction (radians)
+        Azimuth angle of the vessel direction (radians).
     origin : np.ndarray
-        cartesian coordinates of the vessel origin (mm)
+        Cartesian coordinates of the vessel origin (mm).
     dchi : float
-        susceptibility difference between the vessel and the surrounding tissue (cgs units)
+        Susceptibility difference between the vessel and the surrounding tissue (cgs units).
     permeation_probability : float
-        probability for a spin to permeate through the vesel wall (fraction of 1)
+        Probability for a spin to permeate through the vessel wall (fraction of 1).
     label : str
-        string to identify the vessel.
+        String to identify the vessel.
     """
     def __new__(
         cls,
@@ -267,6 +347,27 @@ class InfiniteCylinder3D:
         label: str='',
         rng: np.random.Generator = np.random.default_rng()
     ) -> InfiniteCylinder3DNumba:
+        """Create a vessel with a randomly generated position.
+
+        Parameters
+        ----------
+        diameter : float
+            Vessel diameter (mm).
+        dchi : float
+            Susceptibility difference between the vessel and the surrounding tissue (cgs units).
+        voxel_size : float
+            Size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
+        permeation_probability : float, optional
+            Probability for a spin to permeate through the vessel wall (fraction of 1). By default 0.
+        label : str, optional
+           String to identify the vessel, by default ''.
+        rng : np.random.Generator, optional
+            Generator object for the random number generation, by default np.random.default_rng().
+
+        Returns
+        -------
+        InfiniteCylinder3DNumba
+        """        
 
         # calculate radius of the sphere around the voxel
         voxel_sphere_radius = 0.5 * np.sqrt(3) * voxel_size
@@ -303,6 +404,105 @@ class InfiniteCylinder3D:
             dchi,
             permeation_probability
         )
+
+    def is_IV_dBz(self, positions: np.ndarray, B0: float) -> Tuple[np.ndarray, np.ndarray, float]:
+        """Given an array of positions and a magnetic field strength for B0, returns whether the positions are intravascular and the dBz magnetic field offset.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+        B0 : float
+            B0 magnetic field strength (Tesla).
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray, float]
+            3 element Tuple. The first element is a boolean array, indicating for each position if it is intravascular. The second element is an array with the extravascular dBz magnetic field offset of each position. The thrid element is the intravascular dBz magnetic offset (a single value as it is constant). 
+            
+            Note that the extravascular dBz is also provided for intravascular positions. In most cases this can be ignored, but is sometimes required during simulations. 
+        """
+        pass
+
+    def is_IV(self, positions: np.ndarray) -> np.ndarray:
+        """Given an array of positions, returns whether the positions are intravascular.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array, indicating for each position if it is intravascular.
+        """
+        pass
+
+    def dBz_EV(self, positions, B0):
+        """Given an array of positions and a magnetic field strength for B0, returns the extravascular dBz magnetic field offset.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+        B0 : float
+            B0 magnetic field strength (Tesla).
+
+        Returns
+        -------
+        np.ndarray
+            Array with the extravascular dBz magnetic field offset of each position.
+            
+            Note that the extravascular dBz is also provided for intravascular positions. In most cases this can be ignored, but is sometimes required during simulations. 
+        """
+        pass
+    
+    def dBz_IV(self, B0: float) -> float:
+        """Given a magnetic field strength for B0, returns whether the positions are intravascular and the dBz magnetic field offset.
+
+        Parameters
+        ----------
+        B0 : float
+            B0 magnetic field strength (Tesla).
+
+        Returns
+        -------
+        float
+            The intravascular dBz magnetic offset.
+        """
+        pass
+
+    def intersects(self, other: InfiniteCylinder3DNumba) -> bool:
+        """Given another 3D infinite cylinder object, returns whether the two vessels intersect.
+
+        Parameters
+        ----------
+        other : InfiniteCylinder3DNumba
+            Another 3D infinite cylinder object.
+
+        Returns
+        -------
+        bool
+            Returns True if the vessels intersect and False otherwise.
+        """
+        pass
+
+    def volume_fraction(self, voxel_size: float) -> float:
+        """Given the side length of an isometric voxel, returns an estimate of the volume fraction that the vessel occupies in that space.
+
+        Parameters
+        ----------
+        voxel_size : float
+            Side length of the isometric voxel.
+
+        Returns
+        -------
+        float
+            Estimated volume fraction.
+        """
+        pass       
+
 
 spec_infinite_cylinder_2D = [
     ('label', types.unicode_type),
