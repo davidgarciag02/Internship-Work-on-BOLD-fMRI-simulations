@@ -9,7 +9,7 @@ from . import BOLDvessel
 def size_from_k(diameter: float, k: float, ADC: float, dt: float) -> float:
     
     A = np.sqrt(2 * ADC * dt / 1000)
-   
+    
     return 2 * (A + k * diameter / 2)
 
 class Geometry:
@@ -23,7 +23,7 @@ class Geometry:
         Parameters
         ----------
         positions : np.ndarray
-            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+            Positons in cartesian space (mm). Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
 
         Returns
         -------
@@ -38,7 +38,7 @@ class Geometry:
         Parameters
         ----------
         positions : np.ndarray
-            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+            Positons in cartesian space (mm). Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
 
         Returns
         -------
@@ -53,7 +53,7 @@ class Geometry:
         Parameters
         ----------
         positions : np.ndarray
-            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+            Positons in cartesian space (mm). Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
 
         Returns
         -------
@@ -95,7 +95,7 @@ class Geometry:
         Parameters
         ----------
         positions : np.ndarray
-            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+            Positons in cartesian space (mm). Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
 
         Raises
         ------
@@ -188,7 +188,18 @@ class ContinuousVoxel3D(ContinuousVoxel):
         size: float,
         B0: float,
         vessels: Optional[BOLDvessel.Vessel3D]=None
-    ):  
+    ):
+        """Continuous space 3 dimensional voxel
+
+        Parameters
+        ----------
+        size : float
+            Side length of the voxel (mm). Voxels are isometric.
+        B0 : float
+            B0 magnetic field strength (Tesla).
+        vessels : Optional[BOLDvessel.Vessel3D], optional
+            List of 3D vessel objects. By default will create an empty voxel, to which vessels can be added using the `add_vessel` method.
+        """        
         super().__init__(
             ndims=3,
             size=size,
@@ -200,6 +211,18 @@ class ContinuousVoxel3D(ContinuousVoxel):
         self,
         vessel: BOLDvessel.Vessel3D
     ) -> ContinuousVoxel3D:
+        """Add a 3D vessel to the voxel.
+
+        Parameters
+        ----------
+        vessel : BOLDvessel.Vessel3D
+            3D vessel object to add to the voxel.
+
+        Returns
+        -------
+        ContinuousVoxel3D
+            The voxel with the vessel added to it.
+        """
 
         self.vessels.append(vessel)
         return self
@@ -220,6 +243,41 @@ class ContinuousVoxel3D(ContinuousVoxel):
         seed: Optional[int]=None,
         progressbar: bool=True
     ) -> ContinuousVoxel:
+        """Alternate constructor, randomly generates the 3D continuous voxel given a set of parameters.
+
+        Parameters
+        ----------
+        size : float
+            _description_
+        CBV : float
+            _description_
+        B0 : float
+            _description_
+        labels : List[str]
+            _description_
+        weights : Dict[str, float]
+            _description_
+        diameter_distributions : Dict[str, List[float]]
+            _description_
+        dchis : Dict[str, float]
+            _description_
+        permeation_probabilities : Optional[Dict[str, float]], optional
+            _description_, by default None
+        vessel_type : str, optional
+            _description_, by default 'cylinder'
+        allow_vessel_intersection : bool, optional
+            _description_, by default True
+        seed : Optional[int], optional
+            _description_, by default None
+        progressbar : bool, optional
+            _description_, by default True
+
+        Returns
+        -------
+        ContinuousVoxel
+            _description_
+        """
+
 
         rng = np.random.default_rng(seed)
 
@@ -310,7 +368,18 @@ class ContinuousVoxel2D(ContinuousVoxel):
         size: float,
         B0: float,
         vessels: Optional[BOLDvessel.Vessel2D]=None
-    ):  
+    ):
+        """Continuous space 2 dimensional voxel
+
+        Parameters
+        ----------
+        size : float
+            Side length of the voxel (mm). Voxels are isometric.
+        B0 : float
+            B0 magnetic field strength (Tesla).
+        vessels : Optional[BOLDvessel.Vessel2D], optional
+            List of 3D vessel objects. By default will create an empty voxel, to which vessels can be added using the `add_vessel` method.
+        """     
         super().__init__(
             ndims=2,
             size=size,
@@ -322,6 +391,18 @@ class ContinuousVoxel2D(ContinuousVoxel):
         self,
         vessel: BOLDvessel.Vessel2D
     ) -> ContinuousVoxel2D:
+        """Add a 2D vessel to the voxel.
+
+        Parameters
+        ----------
+        vessel : BOLDvessel.Vessel2D
+            2D vessel object to add to the voxel.
+
+        Returns
+        -------
+        ContinuousVoxel2D
+            The voxel with the vessel added to it.
+        """
 
         self.vessels.append(vessel)
         return self

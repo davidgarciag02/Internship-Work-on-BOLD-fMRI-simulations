@@ -87,7 +87,7 @@ class InfiniteCylinder3DNumba:
         Parameters
         ----------
         positions : np.ndarray
-            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+            Positons in cartesian space (mm). Array of floats with shape (N, d) where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
         B0 : float
             B0 magnetic field strength (Tesla).
 
@@ -136,7 +136,7 @@ class InfiniteCylinder3DNumba:
         Parameters
         ----------
         positions : np.ndarray
-            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+            Positons in cartesian space (mm). Array of floats with shape (N, d) where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
 
         Returns
         -------
@@ -176,7 +176,7 @@ class InfiniteCylinder3DNumba:
         Parameters
         ----------
         positions : np.ndarray
-            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+            Positons in cartesian space (mm). Array of floats with shape (N, d) where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
         B0 : float
             B0 magnetic field strength (Tesla).
 
@@ -411,7 +411,7 @@ class InfiniteCylinder3D:
         Parameters
         ----------
         positions : np.ndarray
-            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+            Positons in cartesian space (mm). Array of floats with shape (N, d) where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
         B0 : float
             B0 magnetic field strength (Tesla).
 
@@ -430,7 +430,7 @@ class InfiniteCylinder3D:
         Parameters
         ----------
         positions : np.ndarray
-            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+            Positons in cartesian space (mm). Array of floats with shape (N, d) where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
 
         Returns
         -------
@@ -445,7 +445,7 @@ class InfiniteCylinder3D:
         Parameters
         ----------
         positions : np.ndarray
-            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+            Positons in cartesian space (mm). Array of floats with shape (N, d) where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
         B0 : float
             B0 magnetic field strength (Tesla).
 
