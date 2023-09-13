@@ -242,40 +242,40 @@ class ContinuousVoxel3D(ContinuousVoxel):
         allow_vessel_intersection: bool = True,
         seed: Optional[int]=None,
         progressbar: bool=True
-    ) -> ContinuousVoxel:
+    ) -> ContinuousVoxel3D:
         """Alternate constructor, randomly generates the 3D continuous voxel given a set of parameters.
 
         Parameters
         ----------
         size : float
-            _description_
+            Side length of the voxel (mm). Voxels are isometric.
         CBV : float
-            _description_
+            Target cerebral blood volume (CBV). Vessels will be added until the estimated CBV reaches the target CBV (the vessel that causes the estimated CBV to surpass the target CBV is included).
         B0 : float
-            _description_
+            B0 magnetic field strength (Tesla). The field direction is always [0, 0, 1].
         labels : List[str]
-            _description_
+            List of vessel group labels. 
         weights : Dict[str, float]
-            _description_
+            Dictionary with each group label (keys) and a relative CBV weight of each group (values). The sum of CBV weight does not need to equal 1, as the weighting is normalized. 
         diameter_distributions : Dict[str, List[float]]
-            _description_
+            Dictionary with each group label (keys) and a list of diameters of each group (values). The generated vessel diameters are uniformly sampled from the list.
         dchis : Dict[str, float]
-            _description_
+            Dictionary with each group label (keys) and the magnetic susceptibility difference of each group (values). The magnetic susceptibility difference is between the vessel's intravascular compartment and the extravascular space. The magnetic susceptibility units are in cgs.
         permeation_probabilities : Optional[Dict[str, float]], optional
-            _description_, by default None
+            Dictionary with each group label (keys) and the permeation probability of each group (values). The permeation probability applies only to Monte Carlo simulations. Any spins diffusing across the vessel wall during a Monte Carlo step will have this probability of permeating through. The default value will set all probabilities to 0, making the vessels impermeable.
         vessel_type : str, optional
-            _description_, by default 'cylinder'
+            Type of vessel to generate. 'cylinder' will generate `BOLDvessel.InfiniteCylinder3D` and 'sphere' will generate spheres `BOLDvessel.Sphere3D`
         allow_vessel_intersection : bool, optional
-            _description_, by default True
+            When generating the vessels, whether to allow them to intersect. Setting to False in voxels with InfiniteCylinder3D vessels creates a voxel with non-uniform CBV. The default is True.
         seed : Optional[int], optional
-            _description_, by default None
+            Seed for the random generation. The default is None, which does not use a seed.
         progressbar : bool, optional
-            _description_, by default True
+            Whether to show a progress bar in the terminal, by default True.
 
         Returns
         -------
-        ContinuousVoxel
-            _description_
+        ContinuousVoxel3D
+            3D continuous voxel.
         """
 
 
