@@ -182,24 +182,25 @@ class ContinuousVoxel(Geometry):
 
 
 class ContinuousVoxel3D(ContinuousVoxel):
-     
+    """Continuous space 3 dimensional voxel.
+
+    Parameters
+    ----------
+    size : float
+        Side length of the voxel (mm). Voxels are isometric.
+    B0 : float
+        B0 magnetic field strength (Tesla).
+    vessels : Optional[BOLDvessel.Vessel3D], optional
+        List of 3D vessel objects. By default will create an empty voxel, to which vessels can be added using the `add_vessel` method.
+    """   
+
     def __init__(
         self,
         size: float,
         B0: float,
         vessels: Optional[BOLDvessel.Vessel3D]=None
     ):
-        """Continuous space 3 dimensional voxel
-
-        Parameters
-        ----------
-        size : float
-            Side length of the voxel (mm). Voxels are isometric.
-        B0 : float
-            B0 magnetic field strength (Tesla).
-        vessels : Optional[BOLDvessel.Vessel3D], optional
-            List of 3D vessel objects. By default will create an empty voxel, to which vessels can be added using the `add_vessel` method.
-        """        
+   
         super().__init__(
             ndims=3,
             size=size,
@@ -264,7 +265,7 @@ class ContinuousVoxel3D(ContinuousVoxel):
         permeation_probabilities : Optional[Dict[str, float]], optional
             Dictionary with each group label (keys) and the permeation probability of each group (values). The permeation probability applies only to Monte Carlo simulations. Any spins diffusing across the vessel wall during a Monte Carlo step will have this probability of permeating through. The default value will set all probabilities to 0, making the vessels impermeable.
         vessel_type : str, optional
-            Type of vessel to generate. 'cylinder' will generate `BOLDvessel.InfiniteCylinder3D` and 'sphere' will generate spheres `BOLDvessel.Sphere3D`
+            Type of vessel to generate. 'cylinder' will generate `BOLDvessel.InfiniteCylinder3D` and 'sphere' will generate spheres `BOLDvessel.Sphere3D`. Default is 'cylinder'.
         allow_vessel_intersection : bool, optional
             When generating the vessels, whether to allow them to intersect. Setting to False in voxels with InfiniteCylinder3D vessels creates a voxel with non-uniform CBV. The default is True.
         seed : Optional[int], optional
@@ -277,7 +278,6 @@ class ContinuousVoxel3D(ContinuousVoxel):
         ContinuousVoxel3D
             3D continuous voxel.
         """
-
 
         rng = np.random.default_rng(seed)
 
@@ -362,24 +362,24 @@ class ContinuousVoxel3D(ContinuousVoxel):
         return voxel
 
 class ContinuousVoxel2D(ContinuousVoxel):
-    
+    """Continuous space 2 dimensional voxel.
+
+    Parameters
+    ----------
+    size : float
+        Side length of the voxel (mm). Voxels are isometric.
+    B0 : float
+        B0 magnetic field strength (Tesla).
+    vessels : Optional[BOLDvessel.Vessel2D], optional
+        List of 3D vessel objects. By default will create an empty voxel, to which vessels can be added using the `add_vessel` method.
+    """     
+
     def __init__(
         self,
         size: float,
         B0: float,
         vessels: Optional[BOLDvessel.Vessel2D]=None
     ):
-        """Continuous space 2 dimensional voxel
-
-        Parameters
-        ----------
-        size : float
-            Side length of the voxel (mm). Voxels are isometric.
-        B0 : float
-            B0 magnetic field strength (Tesla).
-        vessels : Optional[BOLDvessel.Vessel2D], optional
-            List of 3D vessel objects. By default will create an empty voxel, to which vessels can be added using the `add_vessel` method.
-        """     
         super().__init__(
             ndims=2,
             size=size,
@@ -423,6 +423,40 @@ class ContinuousVoxel2D(ContinuousVoxel):
         seed: Optional[int]=None,
         progressbar: bool=True
     ) -> ContinuousVoxel2D:
+        """Alternate constructor, randomly generates the 2D continuous voxel given a set of parameters.
+
+        Parameters
+        ----------
+        size : float
+            Side length of the voxel (mm). Voxels are isometric.
+        CBV : float
+            Target cerebral blood volume (CBV). Vessels will be added until the estimated CBV reaches the target CBV (the vessel that causes the estimated CBV to surpass the target CBV is included).
+        B0 : float
+            B0 magnetic field strength (Tesla).
+        labels : List[str]
+            List of vessel group labels. 
+        weights : Dict[str, float]
+            Dictionary with each group label (keys) and a relative CBV weight of each group (values). The sum of CBV weight does not need to equal 1, as the weighting is normalized. 
+        diameter_distributions : Dict[str, List[float]]
+            Dictionary with each group label (keys) and a list of diameters of each group (values). The generated vessel diameters are uniformly sampled from the list.
+        dchis : Dict[str, float]
+            Dictionary with each group label (keys) and the magnetic susceptibility difference of each group (values). The magnetic susceptibility difference is between the vessel's intravascular compartment and the extravascular space. The magnetic susceptibility units are in cgs.
+        permeation_probabilities : Optional[Dict[str, float]], optional
+            Dictionary with each group label (keys) and the permeation probability of each group (values). The permeation probability applies only to Monte Carlo simulations. Any spins diffusing across the vessel wall during a Monte Carlo step will have this probability of permeating through. The default value will set all probabilities to 0, making the vessels impermeable.
+        vessel_type : str, optional
+            Type of vessel to generate. 'cylinder' will generate `BOLDvessel.InfiniteCylinder2D`. Default is 'cylinder'.
+        allow_vessel_intersection : bool, optional
+            When generating the vessels, whether to allow them to intersect. Setting to False in voxels with InfiniteCylinder3D vessels creates a voxel with non-uniform CBV. The default is True.
+        seed : Optional[int], optional
+            Seed for the random generation. The default is None, which does not use a seed.
+        progressbar : bool, optional
+            Whether to show a progress bar in the terminal, by default True.
+
+        Returns
+        -------
+        ContinuousVoxel2D
+            2D continuous voxel.
+        """
 
         rng = np.random.default_rng(seed)
 
@@ -580,6 +614,19 @@ class DiscreteVoxel(Geometry):
         return CBV
 
 class DiscreteVoxel3D(DiscreteVoxel):
+    """Discrete space 3 dimensional voxel.
+
+    Parameters
+    ----------
+    vessel_index_grid : np.ndarray
+        Integer array of shape (N, N, N). It serves as a discretized representation of the voxel space, indicating where the intravascular and extravascular spaces are located. A value of 0 represents the extravascular space and positive integers (1,2,3...) represent intravascular space. Different positive integers represent different vessels, or vessel types, which can be associated with different properties. The integer associated to a specific vessel is called its 'vessel index'.
+    dBz_grid : np.ndarray
+        Float array of shape (N, N, N). It represents the magnetic field offset space (in Tesla). This should be matched to the `vessel_index_grid`.
+    permeation_probability_list : List[float]
+        List of probabilities (between 0 and 1) which indicate the probability for Monte Carlo spins to permeate in and out of the vessels. The first item in the list corresponds to the permeation probability of all vessels with a vessel index of 1, the second item in the list corresponds to the permeation probability of all vessels with a vessel index of 2, and so on for any additional vessel index. The extravascular space does not have a permeation probability, so a vessel index of 0 does not have an associated permeation probability in the list.
+    size : float
+        The side length of the voxel (in mm). Voxels are isometric.
+    """
 
     def __init__(
         self,
@@ -601,7 +648,21 @@ class DiscreteVoxel3D(DiscreteVoxel):
         cls,
         N: int,
         voxel: ContinuousVoxel3D
-    ):
+    ) -> DiscreteVoxel3D:
+        """Alternate constructor, converts a 3D continuous voxel to a 3D discrete voxel. The magnetic field offset (dBz) is calculated using the analytical equations from the 3D continuous voxel object.
+
+        Parameters
+        ----------
+        N : int
+            The number of discrete points along the voxel edges. Therefore the output 3D discrete voxel is represented on an (N, N, N) grid.
+        voxel : ContinuousVoxel3D
+            3D continuous voxel object to convert to discrete space.
+
+        Returns
+        -------
+        DiscreteVoxel3D
+            3D discrete voxel.
+        """        
         size = voxel.size
 
         linear_coord = np.linspace(-size/2, size/2, N)
@@ -630,7 +691,26 @@ class DiscreteVoxel3D(DiscreteVoxel):
         voxel: ContinuousVoxel,
         padding: int=0,
         extend: bool=False,
-    ):
+    ) -> DiscreteVoxel3D:
+        """Alternate constructor, converts a 3D continuous voxel to a 3D discrete voxel. The magnetic field offset (dBz) is calculated using FFT convolution.
+
+        Parameters
+        ----------
+        N : int
+            The number of discrete points along the voxel edges. Therefore the output 3D discrete voxel is represented on an (N, N, N) grid.
+        voxel : ContinuousVoxel
+            3D continuous voxel object to convert to discrete space.
+        padding : int, optional
+            Amount of zero padding to add to each side of the voxel before the FFT step. The default is 0, which will cause wrapping of the field offset. Using a value of N/2 will completely remove the wrapping effect but is more computationally demanding.
+        extend : bool, optional
+            If True, will extend the vessels to the zero padding, but is more computationally demanding. Doing so creates a more accurate representation of the continuous voxel (e.g. infinite cylinders cannot be infinite in the discrete space, but extending the vessels will make them "more" infinite). Default is False.
+
+        Returns
+        -------
+        DiscreteVoxel3D
+            3D discrete voxel.
+        """
+
         size = voxel.size
         subvox_size = size/N
 
@@ -675,8 +755,8 @@ class DiscreteVoxel3D(DiscreteVoxel):
         size: float,
         B0: float,
         padding: int=0
-    ):  
-        
+    ) -> DiscreteVoxel3D:
+             
         filename, file_extension = os.path.splitext(filepath)
 
         if file_extension == '.txt':
@@ -716,17 +796,46 @@ class DiscreteVoxel3D(DiscreteVoxel):
     def from_vessel_index_grid_FFT(
         cls,
         vessel_index_grid: np.ndarray,
-        dchi_list: List[float],
+        dchis: Union[List[float], np.ndarray],
         permeation_probability_list: List[float],
         size: float,
         B0: float,
         padding: int=0
-    ):
+    ) -> DiscreteVoxel3D:
+        """Alternate constructor, creates a 3D discrete voxel from an imported vessel index grid and magnetic susceptibility mapping. The magnetic field offset (dBz) is calculated using FFT convolution.
 
-        grid_dchi = np.array(vessel_index_grid, dtype=float)
+        Parameters
+        ----------
+        vessel_index_grid : np.ndarray
+            _description_
+        dchis : Union[List[float], np.ndarray]
+            The susceptibility difference between the intravascular and extravascular space. Can be a list of magnetic susceptibility differences where the first item in the list corresponds to the magnetic susceptibility difference of of all vessels with a vessel index of 1, the second item in the list corresponds to the magnetic susceptibility difference of all vessels with a vessel index of 2, and so on for any additional vessel index. Can also be a float array of shape (N, N, N), indicating the magnetic susceptibility difference at each point in space. Units are in cgs.
+        permeation_probability_list : List[float]
+            List of probabilities (between 0 and 1) which indicate the probability for Monte Carlo spins to permeate in and out of the vessels. The first item in the list corresponds to the permeation probability of all vessels with a vessel index of 1, the second item in the list corresponds to the permeation probability of all vessels with a vessel index of 2, and so on for any additional vessel index. The extravascular space does not have a permeation probability, so a vessel index of 0 does not have an associated permeation probability in the list.
+        size : float
+            Side length of the voxel (mm). Voxels are isometric.
+        B0 : float
+            B0 magnetic field strength (Tesla).
+        padding : int, optional
+            Amount of zero padding to add to each side of the voxel before the FFT step. The default is 0, which will cause wrapping of the field offset. Using a value of N/2 will completely remove the wrapping effect but is more computationally demanding.
 
-        for i, dchi in enumerate(dchi_list):
-            grid_dchi[grid_dchi == i+1] = dchi
+        Returns
+        -------
+        DiscreteVoxel3D
+            3D discrete voxel.   
+        """
+
+        if isinstance(dchis, list):
+            grid_dchi = np.array(vessel_index_grid, dtype=float)
+
+            for i, dchi in enumerate(dchis):
+                grid_dchi[grid_dchi == i+1] = dchi
+
+        elif isinstance(dchis, np.ndarray):
+            grid_dchi = dchis
+
+        else:
+            raise Exception('`dchis` argument is neither a list nor a Numpy array.')
         
         dBz_grid = cls.dchi_mask_to_dBz_FFT(grid_dchi, padding, B0)
 
@@ -739,11 +848,11 @@ class DiscreteVoxel3D(DiscreteVoxel):
 
     @staticmethod
     def dchi_mask_to_dBz_FFT(
-        grid_dchi: np.ndarray,
+        dchi_grid: np.ndarray,
         padding: int,
         B0: float
     ):
-        N = grid_dchi.shape[0]
+        N = dchi_grid.shape[0]
         half_N = int(np.ceil(N/2))
 
         if N % 2 != 0:
@@ -764,7 +873,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
 
         kernel_FFT = fft.rfftn(kernel_pos, s=(pad,pad,pad))
 
-        susceptibility_map_FFT = fft.rfftn(4*np.pi*grid_dchi, s=(pad,pad,pad))
+        susceptibility_map_FFT = fft.rfftn(4*np.pi*dchi_grid, s=(pad,pad,pad))
         
         dBz_padded = B0 * fft.irfftn(
             susceptibility_map_FFT * kernel_FFT, 
@@ -783,7 +892,20 @@ class DiscreteVoxel3D(DiscreteVoxel):
         return dBz
 
 class DiscreteVoxel2D(DiscreteVoxel):
+    """Discrete space 2 dimensional voxel.
 
+    Parameters
+    ----------
+    vessel_index_grid : np.ndarray
+        Integer array of shape (N, N). It serves as a discretized representation of the voxel space, indicating where the intravascular and extravascular spaces are located. A value of 0 represents the extravascular space and positive integers (1,2,3...) represent intravascular space. Different positive integers represent different vessels, or vessel types, which can be associated with different properties. The integer associated to a specific vessel is called its 'vessel index'.
+    dBz_grid : np.ndarray
+        Float array of shape (N, N). It represents the magnetic field offset space (in Tesla). This should be matched to the `vessel_index_grid`.
+    permeation_probability_list : List[float]
+        List of probabilities (between 0 and 1) which indicate the probability for Monte Carlo spins to permeate in and out of the vessels. The first item in the list corresponds to the permeation probability of all vessels with a vessel index of 1, the second item in the list corresponds to the permeation probability of all vessels with a vessel index of 2, and so on for any additional vessel index. The extravascular space does not have a permeation probability, so a vessel index of 0 does not have an associated permeation probability in the list.
+    size : float
+        The side length of the voxel (in mm). Voxels are isometric.
+    """
+    
     def __init__(
         self,
         vessel_index_grid: np.ndarray,
@@ -804,7 +926,22 @@ class DiscreteVoxel2D(DiscreteVoxel):
         cls,
         N: int,
         voxel: ContinuousVoxel2D
-    ):
+    ) -> DiscreteVoxel2D:
+        """Alternate constructor, converts a 2D continuous voxel to a 2D discrete voxel. The magnetic field offset (dBz) is calculated using the analytical equations from the 2D continuous voxel object.
+
+        Parameters
+        ----------
+        N : int
+            The number of discrete points along the voxel edges. Therefore the output 3D discrete voxel is represented on an (N, N) grid.
+        voxel : ContinuousVoxel2D
+            2D continuous voxel object to convert to discrete space.
+
+        Returns
+        -------
+        DiscreteVoxel2D
+            2D discrete voxel.
+        """
+
         size = voxel.size
 
         linear_coord = np.linspace(-size/2, size/2, N)
