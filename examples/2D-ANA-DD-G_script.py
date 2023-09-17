@@ -1,5 +1,5 @@
 #Importing relevant packages
-from BOLDswimsuite import BOLDgeometry, BOLDsequence, BOLDspins
+from BOLDswimsuite import BOLDgeometry, BOLDdeterministic
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
@@ -16,7 +16,7 @@ def main():
         dt=0.2
     )
     
-    voxel = BOLDgeometry.ContinuousVoxel2D.from_random(
+    continuous_voxel = BOLDgeometry.ContinuousVoxel2D.from_random(
         size=size,
         CBV=0.02,
         B0=3,
@@ -30,33 +30,33 @@ def main():
         seed=1,
         progressbar=True
     )
-        
-    spins = BOLDspins.Spins2D(
-        ADC=0.001,
-        num_spins=10_000,
-        geometry=voxel,
-        dt=0.2,
-        IV=True,
-        seed=1
-    )
 
-    sequence = BOLDsequence.SpinSequence(
-        spins=spins,
+    discrete_voxel = BOLDgeometry.DiscreteVoxel2D.from_continuous_analytical(
+        N=200,
+        voxel=continuous_voxel
+    )
+        
+    dd2d = BOLDdeterministic.DeterministicDiffuser2D(
+        geometry=discrete_voxel,
         pulse_time_indices=[0,175],
         pulse_angles=[np.pi/2,np.pi],
-        pulse_axes=[[np.pi/2, np.pi/2], [np.pi/2, 0]]      
+        pulse_axes=[[np.pi/2, np.pi/2], [np.pi/2, 0]],    
+        ADC=0.001,
+        dt=0.2,
+        kernel_type='ModifiedBessel',
+        permeable_vessels=False
     )
 
-    eviv, ev, iv = sequence.walk(
+    eviv, ev, iv = dd2d.walk(
         dt=0.2,
         num_steps=nsteps,
         progressbar=True
     )
 
-    time_range = np.arange(0, nsteps * spins.dt, spins.dt)
+    time_range = np.arange(0, nsteps * dd2d.dt, dd2d.dt)
 
     #printing number of vessels
-    print('Number of vessels:', len(voxel.vessels))
+    print('Number of vessels:', len(continuous_voxel.vessels))
 
     #plotting
     f, (ax1,ax2,ax3) = plt.subplots(nrows=1, ncols=3, figsize=(15,5))

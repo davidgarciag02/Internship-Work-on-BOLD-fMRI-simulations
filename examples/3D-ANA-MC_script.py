@@ -20,11 +20,11 @@ def main():
         size=size,
         CBV=0.02,
         B0=3,
-        labels=['vsl1'],
-        weights={'vsl1':1},
-        diameter_distributions={'vsl1':[vessel_diameter]},
-        dchis={'vsl1':3e-8},
-        permeation_probabilities={'vsl1':0},
+        labels=['vesselGroup1'],
+        weights={'vesselGroup1':1},
+        diameter_distributions={'vesselGroup1':[vessel_diameter]},
+        dchis={'vesselGroup1':3e-8},
+        permeation_probabilities={'vesselGroup1':0},
         vessel_type='cylinder',
         allow_vessel_intersection=True,
         seed=1,
@@ -40,22 +40,18 @@ def main():
         seed=1
     )
 
-    sequence = BOLDsequence.Sequence(
-        num_samples=spins.num_spins,
+    sequence = BOLDsequence.SpinSequence(
+        spins=spins,
         pulse_time_indices=[0,175],
         pulse_angles=[np.pi/2,np.pi],
-        pulse_axes=[[np.pi/2, np.pi/2], [np.pi/2, 0]]          
+        pulse_axes=[[np.pi/2, np.pi/2], [np.pi/2, 0]]      
     )
 
-    eviv = np.zeros(nsteps)
-    ev = np.zeros(nsteps)
-    iv = np.zeros(nsteps)
-
-    for i in tqdm(range(nsteps)):
-        
-        spins.step(dt=0.2)
-        sequence.spins_step(spins=spins)
-        eviv[i], ev[i], iv[i] = sequence.get_signals()
+    eviv, ev, iv = sequence.walk(
+        dt=0.2,
+        num_steps=nsteps,
+        progressbar=True
+    )
 
     time_range = np.arange(0, nsteps * spins.dt, spins.dt)
 

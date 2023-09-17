@@ -32,7 +32,7 @@ class Spins:
         self.phase = phase_conversion_factor * dBz
         self.vessel_indices = vessel_indices
 
-    def step(self, dt: float) -> Tuple[np.ndarray, np.ndarray]:
+    def step(self, dt: float):
         self.dt = dt
         
         # setting the conversion factor for frequency to phase

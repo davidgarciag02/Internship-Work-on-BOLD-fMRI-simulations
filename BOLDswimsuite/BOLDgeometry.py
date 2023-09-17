@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 import os
 from scipy import fft, io
-from typing import  List, Dict, Optional, Tuple, Union
+from typing import  List, Dict, Optional, Tuple, Union, Literal
 from tqdm import tqdm
 from . import BOLDvessel
 
@@ -239,7 +239,7 @@ class ContinuousVoxel3D(ContinuousVoxel):
         diameter_distributions: Dict[str, List[float]],
         dchis: Dict[str, float],
         permeation_probabilities: Optional[Dict[str, float]]=None,
-        vessel_type: str='cylinder',
+        vessel_type: Literal['cylinder', 'sphere']='cylinder',
         allow_vessel_intersection: bool = True,
         seed: Optional[int]=None,
         progressbar: bool=True
@@ -418,7 +418,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
         diameter_distributions: Dict[str, List[float]],
         dchis: Dict[str, float],
         permeation_probabilities: Optional[Dict[str, float]]=None,
-        vessel_type: str='cylinder',
+        vessel_type: Literal['cylinder']='cylinder',
         allow_vessel_intersection: bool = True,
         seed: Optional[int]=None,
         progressbar: bool=True
