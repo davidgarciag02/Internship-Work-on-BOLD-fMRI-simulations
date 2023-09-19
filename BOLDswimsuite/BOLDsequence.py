@@ -1,13 +1,17 @@
 import numpy as np
-from typing import Optional, List, Tuple, Union
+from typing import Optional, List, Tuple, Union, Literal
+from tqdm import tqdm
+import warnings
 from .BOLDconstants import *
-from . import BOLDspins
+from . import BOLDspins, BOLDgeometry
+from scipy import signal as spsig
+import scipy as sp
 
 class Sequence:
 
     def __init__(
         self,
-        num_samples: int,
+        sample_shape: Union[int, Tuple[int, ...]],
         pulse_time_indices: List[int],
         pulse_angles: List[float],
         pulse_axes: List[List[float]]
@@ -19,9 +23,9 @@ class Sequence:
         self.pulse_angles = pulse_angles
         self.pulse_axes = pulse_axes
 
-        self.Mx = np.zeros(num_samples)
-        self.My = np.zeros(num_samples)
-        self.Mz = np.ones(num_samples)
+        self.Mx = np.zeros(sample_shape)
+        self.My = np.zeros(sample_shape)
+        self.Mz = np.ones(sample_shape)
 
         self.signal = 0 + 0j
         self.EV_signal = 0 + 0j
@@ -37,10 +41,8 @@ class Sequence:
     def step(
         self,
         phase: np.ndarray,
-        is_IV: np.ndarray,
-        dt: float
+        is_IV: np.ndarray
     ):
-
         # apply inital pulse to the spins
         if self._curr_step in self.pulse_time_indices:
             self._apply_pulse()
@@ -58,17 +60,6 @@ class Sequence:
         self.signal = np.mean(Mxy)
         self.EV_signal = np.mean(Mxy_EV)
         self.IV_signal = np.mean(Mxy_IV)
-
-    def spins_step(
-        self,
-        spins: BOLDspins.Spins,
-    ):
-        phase, vessel_index, dt = spins.get_phase_vessel_indices_dt()
-        self.step(
-            phase=phase, 
-            is_IV=vessel_index != 0, 
-            dt=dt
-        )
 
     def _apply_pulse(
         self,
@@ -109,3 +100,52 @@ class Sequence:
 
         self.Mx = x * cphase - y * sphase
         self.My = x * sphase + y * cphase
+
+class SpinSequence(Sequence):
+
+    def __init__(
+        self,
+        spins: BOLDspins.Spins,
+        pulse_time_indices: List[int],
+        pulse_angles: List[float],
+        pulse_axes: List[List[float]]
+    ):
+        self.spins = spins
+
+        super().__init__(
+            sample_shape=spins.num_spins,
+            pulse_time_indices=pulse_time_indices,
+            pulse_angles=pulse_angles,
+            pulse_axes=pulse_axes                
+        )
+
+    def step(
+        self,
+        dt: float
+    ):
+        self.spins.step(dt=dt)
+        phase, vessel_index, dt = self.spins.get_phase_vessel_indices_dt()
+        super().step(
+            phase=phase, 
+            is_IV=vessel_index != 0
+        )
+
+    def walk(
+        self,
+        dt: float,
+        num_steps: int,
+        progressbar: bool=True
+    ):
+        if self._curr_step != 0:
+            warnings.warn('The walk is not on the 0th step of the sequence!')
+
+        eviv = np.zeros(num_steps) 
+        ev = np.zeros(num_steps)
+        iv = np.zeros(num_steps)
+
+        text = 'Walking Through'
+        for j in tqdm(range(num_steps), desc=text, disable=not progressbar):
+            self.step(dt=dt)
+            eviv[j], ev[j], iv[j] = self.get_signals(cplx=False)
+
+        return eviv, ev, iv
