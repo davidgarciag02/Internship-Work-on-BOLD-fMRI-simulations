@@ -211,12 +211,12 @@ class SpinSequence(Sequence):
         cplx : bool, optional
             Whether the signal output arrays should be complex. The default is False, returning the magnitude of the complex signal.
         progressbar : bool, optional
-            3 element Tuple. The first element is the total signal array. The second element is the extravascular signal array. The third element is the intravascular signal array.  
+            Whether to show a progress bar in the terminal, by default True.
 
         Returns
         -------
         Tuple[np.ndarray, np.ndarray, np.ndarray]
-            _description_
+            3 element Tuple. The first element is the total signal array. The second element is the extravascular signal array. The third element is the intravascular signal array.
         """
    
         if self._curr_step != 0:

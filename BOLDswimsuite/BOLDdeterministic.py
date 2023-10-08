@@ -5,10 +5,31 @@ import scipy as sp
 import numpy as np
 from tqdm import tqdm
 import warnings
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Tuple
 
-class DeterministicDiffuser2D(BOLDsequence.Sequence):
-    
+class DeterministicDiffuser2D(BOLDsequence.Sequence):    
+    """Object for applying a pulse sequence through deterministic diffusion. 
+
+    Parameters
+    ----------
+    geometry : BOLDgeometry.DiscreteVoxel2D
+        2D discrete voxel to apply the deterministic diffusion to. Note that the vessel permeabilities defined in this object are superseded by the `permeable_vessels` parameter.
+    pulse_time_indices : List[int]
+        List of the number of times steps before each pulse is applied. For example, if it is `[0, 5, 10]`, and each step is 0.2ms, the pulses will be applied at the 0st, 10th and 20th time step, or at t=0ms, 2ms and 4ms. The pulses are always applied before dephasing is applied.
+    pulse_angles : List[float]
+        List of angle of each pulse (radians). Must be the same length as `pulse_time_indices`
+    pulse_axes : List[List[float]]
+        List of rotation axes, in polar coordinates (radians). Each axis in the list is a 2-element list with the form `[phi,theta]`. For example, a pulse on the x-axis will be represented as `[np.pi/2, 0]` and a pules on the y-axis will be represented as `[np.pi/2, np.pi/2]`.
+    ADC : float
+        Apparent diffusion coefficient (mm^2/s).
+    dt : float
+        Time step length for the inital phase calculation (ms).
+    kernel_type : Literal['ModifiedBessel', 'Gaussian']
+        The type of convolution kernel to use. Default is 'ModifiedBessel'.
+    permeable_vessels : bool
+        If False, will use a correction method to stop diffusion across vessel walls. Otherwise vessels will be permeable. Default is False.
+    """
+
     def __init__(
         self,
         geometry: BOLDgeometry.DiscreteVoxel2D,
@@ -19,7 +40,7 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         dt: float,
         kernel_type: Literal['ModifiedBessel', 'Gaussian']='ModifiedBessel',
         permeable_vessels: bool=False
-    ):
+    ):     
         self.ADC = ADC
         self.dt = dt
         self.geometry = geometry
@@ -39,6 +60,13 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         self,
         dt: Optional[float]=None
     ):
+        """Advance the diffuser by 1 step.
+
+        Parameters
+        ----------
+        dt : Optional[float]
+            Length of the time step (ms). If not provided, will use the same time step length as the previous step (or as defined during object instantiation).
+        """
         
         dt = self.dt if dt is None else dt
 
@@ -62,9 +90,9 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         self._curr_step += 1
 
         if self.permeable_vessels:
-            self.Mx, self.My = self._diffusion_convolution_permeable(self.Mx, self.My, self.kernel, self.kernel_type) 
+            self.Mx, self.My = self._unrestricted_diffusion_convolution(self.Mx, self.My, self.kernel, self.kernel_type) 
         else:
-            self.Mx, self.My = self._diffusion_convolution_impermeable(self.Mx, self.My, is_IV, not_is_IV, self.kernel, self.kernel_type) 
+            self.Mx, self.My = self._restricted_diffusion_convolution(self.Mx, self.My, is_IV, not_is_IV, self.kernel, self.kernel_type) 
 
         # calculating the transverse magnetization using the complex notation
         Mxy = self.Mx + 1j * self.My
@@ -80,8 +108,28 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         self,
         dt: float,
         num_steps: int,
+        cplx: bool = False,
         progressbar: bool=True
-    ):
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Advance the diffuser by many steps.
+
+        Parameters
+        ----------
+        dt : float
+            Length of the time steps (ms).
+        num_steps : int
+            Number of time steps.
+        cplx : bool, optional
+            Whether the signal output arrays should be complex. The default is False, returning the magnitude of the complex signal.
+        progressbar : bool, optional
+            Whether to show a progress bar in the terminal, by default True.
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray, np.ndarray]
+            3 element Tuple. The first element is the total signal array. The second element is the extravascular signal array. The third element is the intravascular signal array.
+        """
+
         if self._curr_step != 0:
             warnings.warn('The walk is not on the 0th step of the sequence!')
 
@@ -92,12 +140,19 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         text = 'Walking Through'
         for j in tqdm(range(num_steps), desc=text, disable=not progressbar):
             self.step(dt=dt)
-            eviv[j], ev[j], iv[j] = self.get_signals(cplx=False)
+            eviv[j], ev[j], iv[j] = self.get_signals(cplx=cplx)
 
         return eviv, ev, iv
     
     def _make_kernel(self) -> np.ndarray:
-        
+        """Create the diffusion kernel according to `self.kernel_type`.
+
+        Returns
+        -------
+        np.ndarray
+            The generated kernel.
+        """        
+
         sigma_sq = self.ADC*2*self.dt*0.001
 
         grid_range = np.linspace(-self.geometry.size/2, self.geometry.size/2, self.geometry.N)
@@ -118,12 +173,30 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         return kernel
     
     @staticmethod
-    def _diffusion_convolution_permeable(
+    def _unrestricted_diffusion_convolution(
         Mx: np.ndarray, 
         My: np.ndarray,
         kernel: np.ndarray,
         kernel_type: Literal['ModifiedBessel', 'Gaussian']
-    ):
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Apply 1 step of unrestricted deterministic diffusion to the magnetization arrays (Mx, My).
+
+        Parameters
+        ----------
+        Mx : np.ndarray
+            Array of magnetization in the x-direction.
+        My : np.ndarray
+            Array of magnetization in the y-direction.
+        kernel : np.ndarray
+            Diffusion kernel.
+        kernel_type : Literal['ModifiedBessel', 'Gaussian']
+            The type of convolution kernel to use. Default is 'ModifiedBessel'.
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray]
+            The magnetization arrays (Mx, My) with 1 step of diffusion applied.
+        """    
         if kernel_type == 'Gaussian':
             Mx = spsig.fftconvolve(Mx, kernel, mode='same')
             My = spsig.fftconvolve(My, kernel, mode='same')
@@ -138,16 +211,37 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         return Mx, My
     
     @staticmethod
-    def _diffusion_convolution_impermeable(
+    def _restricted_diffusion_convolution(
         Mx: np.ndarray, 
         My: np.ndarray, 
         ip_map: np.ndarray, 
         ep_map: np.ndarray,
         kernel: np.ndarray,
         kernel_type: Literal['ModifiedBessel', 'Gaussian']
-    ):
-        
-        conep, conip = DeterministicDiffuser2D._diffusion_convolution_permeable(ep_map * 1.0, ip_map * 1.0, kernel, kernel_type)
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Apply 1 step of restricted deterministic diffusion to the magnetization arrays (Mx, My).
+
+        Parameters
+        ----------
+        Mx : np.ndarray
+            Array of magnetization in the x-direction.
+        My : np.ndarray
+            Array of magnetization in the y-direction.
+        ip_map : np.ndarray
+            Boolean array indicating whether each magnetization sample is intravascular.
+        ep_map : np.ndarray
+            Boolean array indicating whether each magnetization sample is extravascular.
+        kernel : np.ndarray
+            Diffusion kernel.
+        kernel_type : Literal['ModifiedBessel', 'Gaussian']
+            The type of convolution kernel to use. Default is 'ModifiedBessel'.
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray]
+            The magnetization arrays (Mx, My) with 1 step of diffusion applied.
+        """               
+        conep, conip = DeterministicDiffuser2D._unrestricted_diffusion_convolution(ep_map * 1.0, ip_map * 1.0, kernel, kernel_type)
 
         Wep = conip * ep_map
         Wip = conep * ip_map
@@ -156,11 +250,11 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         Mxip = Mx * ip_map
         Myip = My * ip_map
              
-        Mxep_diff, Myep_diff = DeterministicDiffuser2D._diffusion_convolution_permeable(Mxep, Myep, kernel, kernel_type)
+        Mxep_diff, Myep_diff = DeterministicDiffuser2D._unrestricted_diffusion_convolution(Mxep, Myep, kernel, kernel_type)
         Mxep = Mxep_diff * ep_map + Wep * Mxep
         Myep = Myep_diff * ep_map + Wep * Myep
         
-        Mxip_diff, Myip_diff = DeterministicDiffuser2D._diffusion_convolution_permeable(Mxip, Myip, kernel, kernel_type)
+        Mxip_diff, Myip_diff = DeterministicDiffuser2D._unrestricted_diffusion_convolution(Mxip, Myip, kernel, kernel_type)
         Mxip = Mxip_diff * ip_map + Wip * Mxip
         Myip = Myip_diff * ip_map + Wip * Myip
 
