@@ -21,10 +21,10 @@ def main():
         CBV=0.02,
         B0=3,
         labels=['vesselGroup1'],
-        weights={'vesselGroup1':1},
-        diameter_distributions={'vesselGroup1':[vessel_diameter]},
-        dchis={'vesselGroup1':3e-8},
-        permeation_probabilities={'vesselGroup1':0},
+        weights={'vesselGroup1': 1},
+        diameter_distributions={'vesselGroup1': [vessel_diameter]},
+        dchis={'vesselGroup1': 3e-8},
+        permeation_probabilities={'vesselGroup1': 0},
         vessel_type='cylinder',
         allow_vessel_intersection=True,
         seed=1,
@@ -47,8 +47,8 @@ def main():
 
     sequence = BOLDsequence.SpinSequence(
         spins=spins,
-        pulse_time_indices=[0,175],
-        pulse_angles=[np.pi/2,np.pi],
+        pulse_time_indices=[0, 175],
+        pulse_angles=[np.pi/2, np.pi],
         pulse_axes=[[np.pi/2, np.pi/2], [np.pi/2, 0]]      
     )
 

@@ -36,14 +36,6 @@ BOLDswimsuite.BOLDsequence module
    :undoc-members:
    :show-inheritance:
 
-BOLDswimsuite.BOLDconstants module
-----------------------------------
-
-.. automodule:: BOLDswimsuite.BOLDconstants
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 BOLDswimsuite.BOLDdeterministic module
 --------------------------------------
 

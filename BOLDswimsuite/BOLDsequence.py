@@ -32,7 +32,20 @@ class Sequence:
 
         self.pulse_time_indices = pulse_time_indices
         self.pulse_angles = pulse_angles
-        self.pulse_axes = pulse_axes
+
+        self.pulse_axes = []
+        for axis in pulse_axes:
+            if isinstance(axis, str):
+                if axis == 'x':
+                    self.pulse_axes.append([np.pi/2, 0])
+                elif axis == 'y':
+                    self.pulse_axes.append([np.pi/2, np.pi/2])
+                elif axis == 'z':
+                    self.pulse_axes.append([0, 0])
+                else:
+                    raise Exception('One of the pulse axes is a string, but not \'x\', \'y\' or \'z\'')
+            else:
+                self.pulse_axes.append(axis)
 
         self.Mx = np.zeros(sample_shape)
         self.My = np.zeros(sample_shape)
