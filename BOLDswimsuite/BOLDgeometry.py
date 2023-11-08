@@ -180,7 +180,6 @@ class ContinuousVoxel(Geometry):
 
         return CBV
 
-
 class ContinuousVoxel3D(ContinuousVoxel):
     """Continuous space 3 dimensional voxel.
 

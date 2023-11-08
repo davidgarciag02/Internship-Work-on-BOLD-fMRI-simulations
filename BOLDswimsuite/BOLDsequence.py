@@ -1,13 +1,24 @@
 import numpy as np
-from typing import Optional, List, Tuple, Union, Literal
+from typing import List, Tuple, Union
 from tqdm import tqdm
 import warnings
 from .BOLDconstants import *
-from . import BOLDspins, BOLDgeometry
-from scipy import signal as spsig
-import scipy as sp
+from . import BOLDspins
 
 class Sequence:
+    """Object used to define and apply pulse sequences. Holds information about magnetization of the provided dephasing samples. Assumes an initial magnetization of Mx=My=0 and Mz=1.
+
+    Parameters
+    ----------
+    sample_shape : Union[int, Tuple[int, ...]]
+        Shape of the `phase` and `is_IV` arrays that will be given at each time step. If `int`, assumes a 1D array with length `sample_shape`. If `Tuple[int, ...]`, takes this as the array shape.
+    pulse_time_indices : List[int]
+        List of the number of times steps before each pulse is applied. For example, if it is `[0, 5, 10]`, and each step is 0.2ms, the pulses will be applied at the 0st, 10th and 20th time step, or at t=0ms, 2ms and 4ms. The pulses are always applied before dephasing is applied.
+    pulse_angles : List[float]
+        List of angle of each pulse (radians). Must be the same length as `pulse_time_indices`
+    pulse_axes : List[List[float]]
+        List of rotation axes, in polar coordinates (radians). Each axis in the list is a 2-element list with the form `[phi,theta]`. For example, a pulse on the x-axis will be represented as `[np.pi/2, 0]` and a pules on the y-axis will be represented as `[np.pi/2, np.pi/2]`.
+    """
 
     def __init__(
         self,
@@ -15,13 +26,26 @@ class Sequence:
         pulse_time_indices: List[int],
         pulse_angles: List[float],
         pulse_axes: List[List[float]]
-    ):
+    ):      
         self._curr_step = 0
         self._curr_pulse = 0
 
         self.pulse_time_indices = pulse_time_indices
         self.pulse_angles = pulse_angles
-        self.pulse_axes = pulse_axes
+
+        self.pulse_axes = []
+        for axis in pulse_axes:
+            if isinstance(axis, str):
+                if axis == 'x':
+                    self.pulse_axes.append([np.pi/2, 0])
+                elif axis == 'y':
+                    self.pulse_axes.append([np.pi/2, np.pi/2])
+                elif axis == 'z':
+                    self.pulse_axes.append([0, 0])
+                else:
+                    raise Exception('One of the pulse axes is a string, but not \'x\', \'y\' or \'z\'')
+            else:
+                self.pulse_axes.append(axis)
 
         self.Mx = np.zeros(sample_shape)
         self.My = np.zeros(sample_shape)
@@ -32,6 +56,18 @@ class Sequence:
         self.IV_signal = 0 + 0j
 
     def get_signals(self, cplx: bool=False) -> Union[Tuple[float, float, float], Tuple[complex, complex, complex]]:
+        """Get the total, extravascular and intravascular signals at the current time step.
+
+        Parameters
+        ----------
+        cplx : bool, optional
+            Whether the signal output should be complex. The default is False, returning the magnitude of the complex signal.
+
+        Returns
+        -------
+        Union[Tuple[float, float, float], Tuple[complex, complex, complex]]
+            3 element Tuple. The first element is the total signal. The second element is the extravascular signal. The third element is the intravascular signal.
+        """        
 
         if cplx:
             return self.signal, self.EV_signal, self.IV_signal
@@ -43,6 +79,16 @@ class Sequence:
         phase: np.ndarray,
         is_IV: np.ndarray
     ):
+        """Advance the sequence by 1 step.
+
+        Parameters
+        ----------
+        phase : np.ndarray
+            Array of dephasing samples.
+        is_IV : np.ndarray
+            Array indicating whether each phase sample is intravascular or extravascular.
+        """
+
         # apply inital pulse to the spins
         if self._curr_step in self.pulse_time_indices:
             self._apply_pulse()
@@ -63,7 +109,9 @@ class Sequence:
 
     def _apply_pulse(
         self,
-    ) -> None:
+    ):
+        """Apply the next pulse in the pulse sequence to the magnetization arrays (Mx, My, Mz).
+        """        
 
         ax_theta = self.pulse_axes[self._curr_pulse][0],
         ax_phi = self.pulse_axes[self._curr_pulse][1],
@@ -90,7 +138,14 @@ class Sequence:
     def _apply_dephasing(
         self,
         phase: np.ndarray,
-    ) -> None:
+    ):
+        """Apply dephasing to the magnetization arrays (Mx, My, Mz), given dephasing samples.
+
+        Parameters
+        ----------
+        phase : np.ndarray
+            Array of dephasing samples.
+        """        
 
         x = np.array(self.Mx)
         y = np.array(self.My)
@@ -102,6 +157,19 @@ class Sequence:
         self.My = x * sphase + y * cphase
 
 class SpinSequence(Sequence):
+    """Object used to define and apply pulse sequences to be used with `Spins` objects. Holds information about magnetization of the provided dephasing samples. Assumes an initial magnetization of Mx=My=0 and Mz=1.
+
+    Parameters
+    ----------
+    spins : BOLDspins.Spins
+        Spins object on which the dephasing samples will be taken.
+    pulse_time_indices : List[int]
+        List of the number of times steps before each pulse is applied. For example, if it is `[0, 5, 10]`, and each step is 0.2ms, the pulses will be applied at the 0st, 10th and 20th time step, or at t=0ms, 2ms and 4ms. The pulses are always applied before dephasing is applied.
+    pulse_angles : List[float]
+        List of angle of each pulse (radians). Must be the same length as `pulse_time_indices`
+    pulse_axes : List[List[float]]
+        List of rotation axes, in polar coordinates (radians). Each axis in the list is a 2-element list with the form `[phi,theta]`. For example, a pulse on the x-axis will be represented as `[np.pi/2, 0]` and a pules on the y-axis will be represented as `[np.pi/2, np.pi/2]`.
+    """
 
     def __init__(
         self,
@@ -109,7 +177,7 @@ class SpinSequence(Sequence):
         pulse_time_indices: List[int],
         pulse_angles: List[float],
         pulse_axes: List[List[float]]
-    ):
+    ): 
         self.spins = spins
 
         super().__init__(
@@ -123,6 +191,14 @@ class SpinSequence(Sequence):
         self,
         dt: float
     ):
+        """Advance the sequence and `Spins` by 1 step.
+
+        Parameters
+        ----------
+        dt : float
+            Length of the time step (ms).
+        """
+
         self.spins.step(dt=dt)
         phase, vessel_index, dt = self.spins.get_phase_vessel_indices_dt()
         super().step(
@@ -134,8 +210,28 @@ class SpinSequence(Sequence):
         self,
         dt: float,
         num_steps: int,
+        cplx: bool = False,
         progressbar: bool=True
-    ):
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Advance the sequence and `Spins` by many steps.
+
+        Parameters
+        ----------
+        dt : float
+            Length of the time steps (ms).
+        num_steps : int
+            Number of time steps.
+        cplx : bool, optional
+            Whether the signal output arrays should be complex. The default is False, returning the magnitude of the complex signal.
+        progressbar : bool, optional
+            Whether to show a progress bar in the terminal, by default True.
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray, np.ndarray]
+            3 element Tuple. The first element is the total signal array. The second element is the extravascular signal array. The third element is the intravascular signal array.
+        """
+   
         if self._curr_step != 0:
             warnings.warn('The walk is not on the 0th step of the sequence!')
 
@@ -146,6 +242,6 @@ class SpinSequence(Sequence):
         text = 'Walking Through'
         for j in tqdm(range(num_steps), desc=text, disable=not progressbar):
             self.step(dt=dt)
-            eviv[j], ev[j], iv[j] = self.get_signals(cplx=False)
+            eviv[j], ev[j], iv[j] = self.get_signals(cplx=cplx)
 
         return eviv, ev, iv
