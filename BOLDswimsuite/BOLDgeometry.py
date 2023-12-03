@@ -4,7 +4,9 @@ import os
 from scipy import fft, io
 from typing import  List, Dict, Optional, Tuple, Union, Literal
 from tqdm import tqdm
-from . import BOLDvessel
+from mayavi import mlab
+import matplotlib.pyplot as plt
+from . import BOLDvessel, BOLDdisplay
 
 def size_from_k(diameter: float, k: float, ADC: float, dt: float) -> float:
     
@@ -360,6 +362,24 @@ class ContinuousVoxel3D(ContinuousVoxel):
 
         return voxel
 
+    def show(self):
+        
+        sphere_vessels = []
+        size = self.size
+
+        for i, vessel in enumerate(self.vessels):
+            
+            if isinstance(vessel, BOLDvessel.InfiniteCylinder3DNumba):
+                BOLDdisplay.mlab_plot_infinite_cylinder_3d(vessel, size)
+            
+            if isinstance(vessel, BOLDvessel.Sphere3DNumba):
+                sphere_vessels.append(vessel)
+
+        BOLDdisplay.mlab_plot_sphere_3d_list(sphere_vessels)        
+
+        mlab.outline(color=(0, 0, 0), line_width=5, extent=[-size/2, size/2, -size/2, size/2, -size/2, size/2])
+        mlab.show()
+
 class ContinuousVoxel2D(ContinuousVoxel):
     """Continuous space 2 dimensional voxel.
 
@@ -536,6 +556,14 @@ class ContinuousVoxel2D(ContinuousVoxel):
                     pbar.refresh()
         
         return voxel
+    
+    def show(self):
+        BOLDdisplay.matplotlib_plot_infinite_cylinder_2d_list(self.vessels)
+
+        plt.gca().set_aspect('equal')
+        plt.ylim([-self.size/2, self.size/2])
+        plt.xlim([-self.size/2, self.size/2])
+        plt.show()
 
 class DiscreteVoxel(Geometry):
 
@@ -889,6 +917,14 @@ class DiscreteVoxel3D(DiscreteVoxel):
             dBz = dBz_padded
 
         return dBz
+    
+    def show(self, show_dBz: bool=False):
+        if show_dBz:
+            BOLDdisplay.mlab_plot_dBz_grid_3d(self.dBz_grid)
+        else:
+            BOLDdisplay.mlab_plot_is_IV_grid_3d((self.vessel_index_grid > 0).astype(float))
+        
+        mlab.show()
 
 class DiscreteVoxel2D(DiscreteVoxel):
     """Discrete space 2 dimensional voxel.
@@ -961,3 +997,13 @@ class DiscreteVoxel2D(DiscreteVoxel):
             permeation_probability_list=permeation_probability_list,
             size=size
         )
+
+    def show(self, show_dBz: bool=False):
+        
+        if show_dBz:
+            plt.imshow(self.dBz_grid.T, origin='lower', cmap='seismic')
+        else:
+            is_IV_grid = self.vessel_index_grid.T - 1.2*np.max(self.vessel_index_grid)*(self.vessel_index_grid.T>0)
+            plt.imshow(is_IV_grid, origin='lower', cmap='gnuplot2')
+        
+        plt.show()
