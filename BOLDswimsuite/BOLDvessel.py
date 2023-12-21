@@ -285,6 +285,18 @@ class InfiniteCylinder3DNumba:
         volume_fraction = volume / total_volume
 
         return volume_fraction
+    
+    def to_tuple(self):
+        d = (
+            self.diameter,
+            self.theta, 
+            self.phi, 
+            self.origin, 
+            self.dchi, 
+            self.permeation_probability,
+            self.label
+        )
+        return d
 
     def _radial_vectors_from_positions(self, positions):
         # https://math.stackexchange.com/questions/1905533/find-perpendicular-distance-from-point-to-line-in-3d
@@ -406,6 +418,18 @@ class InfiniteCylinder3D:
             permeation_probability
         )
 
+    @staticmethod
+    def from_tuple(t: tuple):
+        return InfiniteCylinder3DNumba(
+            label=t[6],
+            diameter=t[0],
+            theta=t[1],
+            phi=t[2],
+            origin=t[3],
+            dchi=t[4],
+            permeation_probability=t[5]
+        )
+
     def is_IV_dBz(self, positions: np.ndarray, B0: float) -> Tuple[np.ndarray, np.ndarray, float]:
         """Given an array of positions and a magnetic field strength for B0, returns whether the positions are intravascular and the dBz magnetic field offset.
 
@@ -503,7 +527,6 @@ class InfiniteCylinder3D:
             Estimated volume fraction.
         """
         pass
-
 
 spec_infinite_cylinder_2D = [
     ('label', types.unicode_type),
@@ -751,7 +774,19 @@ class InfiniteCylinder2DNumba:
         volume_fraction = vessel_volume/total_volume
 
         return volume_fraction
-
+    
+    def to_tuple(self):
+        d = (
+            self.diameter,
+            self.theta, 
+            self.phi, 
+            self.origin, 
+            self.dchi, 
+            self.permeation_probability,
+            self.label
+        )
+        return d
+    
     def _radial_distances_and_angles_from_positions(self, points):
 
         #finding the distance between the central axis of the vessel and the point
@@ -854,7 +889,19 @@ class InfiniteCylinder2D:
             dchi,
             permeation_probability,
         )
-
+    
+    @staticmethod
+    def from_tuple(t: tuple):
+        return InfiniteCylinder2DNumba(
+            label=t[6],
+            diameter=t[0],
+            B0_theta=t[1],
+            B0_phi=t[2],
+            origin=t[3],
+            dchi=t[4],
+            permeation_probability=t[5]
+        )
+    
     def is_IV_dBz(self, positions: np.ndarray, B0: float) -> Tuple[np.ndarray, np.ndarray, float]:
         """Given an array of positions and a magnetic field strength for B0, returns whether the positions are intravascular and the dBz magnetic field offset.
 
@@ -1140,7 +1187,17 @@ class Sphere3DNumba:
         volume_fraction = sphere_volume / total_volume
 
         return volume_fraction
-
+    
+    def to_tuple(self):
+        d = (
+            self.diameter,
+            self.origin, 
+            self.dchi, 
+            self.permeation_probability,
+            self.label
+        )
+        return d
+    
     def _radial_distances_and_angles(self, positions):
         # finding the distance between the center of the vessel and the point
         radial_vectors = positions-self.origin
@@ -1204,6 +1261,17 @@ class Sphere3D:
             dchi,
             permeation_probability
         )
+    
+    @staticmethod
+    def from_tuple(t: tuple):
+        return Sphere3DNumba(
+            label=t[4],
+            diameter=t[0],
+            origin=t[1],
+            dchi=t[2],
+            permeation_probability=t[3]
+        )
+
     def is_IV_dBz(self, positions: np.ndarray, B0: float) -> Tuple[np.ndarray, np.ndarray, float]:
         """Given an array of positions and a magnetic field strength for B0, returns whether the positions are intravascular and the dBz magnetic field offset.
 

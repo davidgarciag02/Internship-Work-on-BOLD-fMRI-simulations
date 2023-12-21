@@ -2,7 +2,6 @@
 from BOLDswimsuite import BOLDgeometry, BOLDsequence, BOLDspins
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm
 
 def main():
 
@@ -30,6 +29,10 @@ def main():
         seed=1,
         progressbar=True
     )
+    
+    print(voxel)
+
+    voxel.show() 
         
     spins = BOLDspins.Spins2D(
         ADC=0.001,

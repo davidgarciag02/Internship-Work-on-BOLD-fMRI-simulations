@@ -70,6 +70,7 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         
         dt = self.dt if dt is None else dt
 
+        # if the time step length is changed, the kernel has to be remade
         if dt != self.dt:
             self.dt=dt
             self.kernel = self._make_kernel()
@@ -155,11 +156,9 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
 
         sigma_sq = self.ADC*2*self.dt*0.001
 
-        grid_range = np.linspace(-self.geometry.size/2, self.geometry.size/2, self.geometry.N)
-
-        X, Y = np.meshgrid(grid_range, grid_range)
-
         if self.kernel_type == 'Gaussian':
+            grid_range = np.linspace(-self.geometry.size/2, self.geometry.size/2, self.geometry.N)
+            X, Y = np.meshgrid(grid_range, grid_range)
             kernel = np.exp(-((X ** 2 +  Y ** 2) / (2 * sigma_sq)))
             kernel /= np.sum(kernel)
         
@@ -170,6 +169,13 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
             kernel_range = np.abs(np.arange(-Nhw, Nhw+1))
             kernel = np.exp(-(sigma/dx)**2)*sp.special.iv(kernel_range, (sigma/dx)**2)   
         
+            kernel_size = len(kernel)
+            if kernel_size < 5:
+                warnings.warn(f'Diffusion kernel size is very small (size={kernel_size}). This will likely introduce significant error in the diffusion! Fix by increasing spatial resolution of the voxel (N).')
+
+            else:
+                tqdm.write(f'Diffuson kernel size: {kernel_size}')
+
         return kernel
     
     @staticmethod

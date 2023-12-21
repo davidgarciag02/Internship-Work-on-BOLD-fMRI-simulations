@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from typing import List
 import numpy as np
 
-def mlab_plot_infinite_cylinder_3d(vessel: BOLDvessel.InfiniteCylinder3DNumba, size: float, extend: bool=True):
+def mlab_plot_infinite_cylinder_3d(vessel: BOLDvessel.InfiniteCylinder3DNumba, size: float, extend: bool=False):
 
     radius_size = (np.sqrt(3)*size)/2 if extend else size/2
     axial_points_per_mm = 100/size
@@ -56,19 +56,12 @@ def mlab_plot_sphere_3d(vessel: BOLDvessel.Sphere3DNumba):
 
 def mlab_plot_dBz_grid_3d(dBz_grid: np.ndarray):
 
-    N = dBz_grid.shape[0]
-
     mlab.contour3d(dBz_grid, contours=8, transparent=True)
-    mlab.outline(color=(0, 0, 0), line_width=5, extent=[0, N, 0, N, 0, N])
 
 def mlab_plot_is_IV_grid_3d(is_IV_grid: np.ndarray):
 
     is_IV_grid = is_IV_grid.astype(float)
-
-    N = is_IV_grid.shape[0]
-
     mlab.contour3d(is_IV_grid, contours=2, transparent=False)
-    mlab.outline(color=(0, 0, 0), line_width=5, extent=[0, N, 0, N, 0, N])
 
 def matplotlib_plot_infinite_cylinder_2d_list(vessels: List[BOLDvessel.InfiniteCylinder2DNumba]):
     

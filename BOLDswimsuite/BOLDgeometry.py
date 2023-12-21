@@ -6,6 +6,7 @@ from typing import  List, Dict, Optional, Tuple, Union, Literal
 from tqdm import tqdm
 from mayavi import mlab
 import matplotlib.pyplot as plt
+import pickle
 from . import BOLDvessel, BOLDdisplay
 
 def size_from_k(diameter: float, k: float, ADC: float, dt: float) -> float:
@@ -15,7 +16,7 @@ def size_from_k(diameter: float, k: float, ADC: float, dt: float) -> float:
     return 2 * (A + k * diameter / 2)
 
 class Geometry:
-    
+
     def __init__(self, ndims: int):
         self._ndims = ndims
 
@@ -362,12 +363,14 @@ class ContinuousVoxel3D(ContinuousVoxel):
 
         return voxel
 
-    def show(self):
+    def show(self, azimuth: float=50, elevation: float=60, distance: Optional[float]=None):
         
         sphere_vessels = []
         size = self.size
 
-        for i, vessel in enumerate(self.vessels):
+        distance = distance if distance is not None else 5*size
+
+        for vessel in self.vessels:
             
             if isinstance(vessel, BOLDvessel.InfiniteCylinder3DNumba):
                 BOLDdisplay.mlab_plot_infinite_cylinder_3d(vessel, size)
@@ -375,10 +378,96 @@ class ContinuousVoxel3D(ContinuousVoxel):
             if isinstance(vessel, BOLDvessel.Sphere3DNumba):
                 sphere_vessels.append(vessel)
 
-        BOLDdisplay.mlab_plot_sphere_3d_list(sphere_vessels)        
+        if len(sphere_vessels) > 0: 
+            BOLDdisplay.mlab_plot_sphere_3d_list(sphere_vessels)        
 
         mlab.outline(color=(0, 0, 0), line_width=5, extent=[-size/2, size/2, -size/2, size/2, -size/2, size/2])
+        mlab.view(
+            azimuth=azimuth,
+            elevation=elevation,
+            distance=distance,
+            focalpoint=np.array([0, 0, 0], dtype=float)
+        )
         mlab.show()
+
+    def to_dict(self):
+        vessels_tuple = []
+        for vessel in self.vessels:
+            vessel_tuple = vessel.to_tuple()
+            if isinstance(vessel, BOLDvessel.InfiniteCylinder3DNumba):
+                vessel_type = 'InfiniteCylinder3D'
+            elif isinstance(vessel, BOLDvessel.Sphere3DNumba):
+                vessel_type = 'Sphere3D' 
+            else:
+                raise Exception(f'{type(vessel)} is not supported for saving!') 
+            vessel_tuple = (vessel_type, *vessel_tuple)     
+
+            vessels_tuple.append(vessel_tuple) 
+
+        return {
+            'voxel_type': 'ContinuousVoxel3D',
+            'vessels_tuple': vessels_tuple,
+            'size': self.size,
+            'B0': self.B0
+        }
+    
+    def save(self, filepath: str):
+        with open(filepath, 'wb') as f:
+            pickle.dump(self.to_dict(), f, pickle.HIGHEST_PROTOCOL)
+
+    @classmethod
+    def load(cls, filepath: str):
+        with open(filepath, 'rb') as f:
+            voxel_dict = pickle.load(f)
+
+        voxel_type = voxel_dict['voxel_type']
+        if voxel_type != 'ContinuousVoxel3D':
+            raise Exception(f'Expected voxel type \'ContinuousVoxel3D\' but got \'{voxel_type}\'!')
+
+        vessels = []
+        for vessel_tuple in voxel_dict['vessels_tuple']:
+            if vessel_tuple[0] == 'InfiniteCylinder3D':
+                vessels.append(
+                    BOLDvessel.InfiniteCylinder3D.from_tuple(vessel_tuple[1:])
+                )
+            elif vessel_tuple[0] == 'Sphere3D':
+                vessels.append(
+                    BOLDvessel.Sphere3D.from_tuple(vessel_tuple[1:])
+                )
+            else:
+                raise Exception('Encountered unknown vessel type when loading voxel!')
+        
+        return cls(
+            size=voxel_dict['size'],
+            B0=voxel_dict['B0'],
+            vessels=vessels
+        )
+    
+    def __repr__(self):
+        n_infinite_cylinder_3d = 0
+        n_sphere_3d = 0
+        n_unknown = 0
+        
+        repr_str = f'ContinuousVoxel3D( size={self.size}, B0={self.B0}'
+
+        for vessel in self.vessels:
+            if isinstance(vessel, BOLDvessel.InfiniteCylinder3DNumba):
+                n_infinite_cylinder_3d += 1
+            elif isinstance(vessel, BOLDvessel.Sphere3DNumba):
+                n_sphere_3d += 1
+            else:
+                n_unknown += 1
+        
+        if n_infinite_cylinder_3d > 0:
+            repr_str += f', {n_infinite_cylinder_3d} InfiniteCylinder3D'
+        if n_sphere_3d > 0:
+            repr_str += f', {n_sphere_3d} Sphere3D'     
+        if n_unknown > 0:
+            repr_str += f', {n_unknown} unknown'
+        
+        repr_str += ' )'
+
+        return repr_str
 
 class ContinuousVoxel2D(ContinuousVoxel):
     """Continuous space 2 dimensional voxel.
@@ -564,6 +653,74 @@ class ContinuousVoxel2D(ContinuousVoxel):
         plt.ylim([-self.size/2, self.size/2])
         plt.xlim([-self.size/2, self.size/2])
         plt.show()
+
+    def to_dict(self):
+        vessels_tuple = []
+        for vessel in self.vessels:
+            vessel_tuple = vessel.to_tuple()
+            if isinstance(vessel, BOLDvessel.InfiniteCylinder2DNumba):
+                vessel_type = 'InfiniteCylinder2D'
+            else:
+                raise Exception(f'{type(vessel)} is not supported for saving!') 
+            vessel_tuple = (vessel_type, *vessel_tuple)     
+
+            vessels_tuple.append(vessel_tuple) 
+
+        return {
+            'voxel_type': 'ContinuousVoxel2D',
+            'vessels_tuple': vessels_tuple,
+            'size': self.size,
+            'B0': self.B0
+        }
+    
+    def save(self, filepath: str):
+        with open(filepath, 'wb') as f:
+            pickle.dump(self.to_dict(), f, pickle.HIGHEST_PROTOCOL)
+
+    @classmethod
+    def load(cls, filepath: str):
+        with open(filepath, 'rb') as f:
+            voxel_dict = pickle.load(f)
+
+        voxel_type = voxel_dict['voxel_type']
+        if voxel_type != 'ContinuousVoxel2D':
+            raise Exception(f'Expected voxel type \'ContinuousVoxel2D\' but got \'{voxel_type}\'!')
+
+        vessels = []
+        for vessel_tuple in voxel_dict['vessels_tuple']:
+            if vessel_tuple[0] == 'InfiniteCylinder2D':
+                vessels.append(
+                    BOLDvessel.InfiniteCylinder2D.from_tuple(vessel_tuple[1:])
+                )
+            else:
+                raise Exception('Encountered unknown vessel type when loading voxel!')
+        
+        return cls(
+            size=voxel_dict['size'],
+            B0=voxel_dict['B0'],
+            vessels=vessels
+        )
+    
+    def __repr__(self):
+        n_infinite_cylinder_2d = 0
+        n_unknown = 0
+        
+        repr_str = f'ContinuousVoxel2D( size={self.size}, B0={self.B0}'
+
+        for vessel in self.vessels:
+            if isinstance(vessel, BOLDvessel.InfiniteCylinder2DNumba):
+                n_infinite_cylinder_2d += 1
+            else:
+                n_unknown += 1
+        
+        if n_infinite_cylinder_2d > 0:
+            repr_str += f', {n_infinite_cylinder_2d} InfiniteCylinder2D' 
+        if n_unknown > 0:
+            repr_str += f', {n_unknown} unknown'
+        
+        repr_str += ' )'
+
+        return repr_str
 
 class DiscreteVoxel(Geometry):
 
@@ -918,13 +1075,57 @@ class DiscreteVoxel3D(DiscreteVoxel):
 
         return dBz
     
-    def show(self, show_dBz: bool=False):
+    def show(self, show_dBz: bool=False, azimuth: float=50, elevation: float=60, distance: Optional[float]=None):
         if show_dBz:
             BOLDdisplay.mlab_plot_dBz_grid_3d(self.dBz_grid)
         else:
             BOLDdisplay.mlab_plot_is_IV_grid_3d((self.vessel_index_grid > 0).astype(float))
         
+        distance = distance if distance is not None else 5*self.N
+
+        mlab.outline(color=(0, 0, 0), line_width=5, extent=[0, self.N, 0, self.N, 0, self.N])
+
+        halfN = int(self.N/2)
+
+        mlab.view(
+            azimuth=azimuth,
+            elevation=elevation,
+            distance=distance,
+            focalpoint=np.array([halfN, halfN, halfN], dtype=float)
+        )
+
         mlab.show()
+
+    def save(self, filepath: str, compress: bool=True):
+
+        if compress:
+            np.savez_compressed(
+                filepath,
+                vessel_index_grid = self.vessel_index_grid,
+                dBz_grid = self.dBz_grid,
+                size=self.size,
+                permeation_probability_array = np.array(self.permeation_probability_list)
+            )
+        else:
+            np.savez(
+                filepath,
+                vessel_index_grid = self.vessel_index_grid,
+                dBz_grid = self.dBz_grid,
+                size=self.size,
+                permeation_probability_array = np.array(self.permeation_probability_list)
+            )
+
+    @classmethod
+    def load(cls, filepath: str):
+
+        voxel_data = np.load(filepath)
+
+        return cls(
+            vessel_index_grid=voxel_data['vessel_index_grid'],
+            dBz_grid=voxel_data['dBz_grid'],
+            permeation_probability_list=list(voxel_data['permeation_probability_array']),
+            size=voxel_data['size']
+        )
 
 class DiscreteVoxel2D(DiscreteVoxel):
     """Discrete space 2 dimensional voxel.
@@ -967,7 +1168,7 @@ class DiscreteVoxel2D(DiscreteVoxel):
         Parameters
         ----------
         N : int
-            The number of discrete points along the voxel edges. Therefore the output 3D discrete voxel is represented on an (N, N) grid.
+            The number of discrete points along the voxel edges. Therefore the output 2D discrete voxel is represented on an (N, N) grid.
         voxel : ContinuousVoxel2D
             2D continuous voxel object to convert to discrete space.
 
@@ -1007,3 +1208,34 @@ class DiscreteVoxel2D(DiscreteVoxel):
             plt.imshow(is_IV_grid, origin='lower', cmap='gnuplot2')
         
         plt.show()
+
+    def save(self, filepath: str, compress: bool=True):
+
+        if compress:
+            np.savez_compressed(
+                filepath,
+                vessel_index_grid = self.vessel_index_grid,
+                dBz_grid = self.dBz_grid,
+                size=self.size,
+                permeation_probability_array = np.array(self.permeation_probability_list)
+            )
+        else:
+            np.savez(
+                filepath,
+                vessel_index_grid = self.vessel_index_grid,
+                dBz_grid = self.dBz_grid,
+                size=self.size,
+                permeation_probability_array = np.array(self.permeation_probability_list)
+            )
+
+    @classmethod
+    def load(cls, filepath: str):
+
+        voxel_data = np.load(filepath)
+
+        return cls(
+            vessel_index_grid=voxel_data['vessel_index_grid'],
+            dBz_grid=voxel_data['dBz_grid'],
+            permeation_probability_list=list(voxel_data['permeation_probability_array']),
+            size=voxel_data['size']
+        )

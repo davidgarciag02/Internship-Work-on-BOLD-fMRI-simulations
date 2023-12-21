@@ -2,7 +2,6 @@
 from BOLDswimsuite import BOLDgeometry, BOLDsequence, BOLDspins
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm
 
 def main():
 
@@ -31,11 +30,15 @@ def main():
         progressbar=True
     )
 
+    print(continuous_voxel)
+
     discrete_voxel = BOLDgeometry.DiscreteVoxel3D.from_continuous_analytical(
         N=200,
         voxel=continuous_voxel
     )
-        
+
+    discrete_voxel.show(show_dBz=False)
+
     spins = BOLDspins.Spins3D(
         ADC=0.001,
         num_spins=10_000,
