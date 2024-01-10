@@ -364,6 +364,17 @@ class ContinuousVoxel3D(ContinuousVoxel):
         return voxel
 
     def show(self, azimuth: float=50, elevation: float=60, distance: Optional[float]=None):
+        """Open a Mayavi window, showing a visual representation of the voxel.
+
+        Parameters
+        ----------
+        azimuth : float, 
+            Azimuth angle of the camera (deg), by default 50
+        elevation : float, optional
+            Elevation angle of the camera (deg), by default 60
+        distance : Optional[float], optional
+            Distance between the center of the voxel and the camera. By default None, which sets the distance to 5 times the voxel size.
+        """
         
         sphere_vessels = []
         size = self.size
@@ -390,7 +401,9 @@ class ContinuousVoxel3D(ContinuousVoxel):
         )
         mlab.show()
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
+        """Returns a dictionnary representation of the voxel.
+        """
         vessels_tuple = []
         for vessel in self.vessels:
             vessel_tuple = vessel.to_tuple()
@@ -412,11 +425,25 @@ class ContinuousVoxel3D(ContinuousVoxel):
         }
     
     def save(self, filepath: str):
+        """Save the voxel to a pickle file (.pkl). Can be loaded later using the `load` class method.
+
+        Parameters
+        ----------
+        filepath : str
+            File path and name to the save location.
+        """
         with open(filepath, 'wb') as f:
             pickle.dump(self.to_dict(), f, pickle.HIGHEST_PROTOCOL)
 
     @classmethod
     def load(cls, filepath: str):
+        """Load a voxel from a pickle file (.pkl).
+
+        Parameters
+        ----------
+        filepath : str
+            Path and name to the file location.
+        """
         with open(filepath, 'rb') as f:
             voxel_dict = pickle.load(f)
 
@@ -647,6 +674,9 @@ class ContinuousVoxel2D(ContinuousVoxel):
         return voxel
     
     def show(self):
+        """Open a Matplotlib window, showing a visual representation of the voxel.
+        """
+
         BOLDdisplay.matplotlib_plot_infinite_cylinder_2d_list(self.vessels)
 
         plt.gca().set_aspect('equal')
@@ -655,6 +685,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
         plt.show()
 
     def to_dict(self):
+
         vessels_tuple = []
         for vessel in self.vessels:
             vessel_tuple = vessel.to_tuple()
@@ -674,11 +705,25 @@ class ContinuousVoxel2D(ContinuousVoxel):
         }
     
     def save(self, filepath: str):
+        """Save the voxel to a pickle file (.pkl). Can be loaded later using the `load` class method.
+
+        Parameters
+        ----------
+        filepath : str
+            File path and name to the save location.
+        """
         with open(filepath, 'wb') as f:
             pickle.dump(self.to_dict(), f, pickle.HIGHEST_PROTOCOL)
 
     @classmethod
     def load(cls, filepath: str):
+        """Load a voxel from a pickle file (.pkl).
+
+        Parameters
+        ----------
+        filepath : str
+            Path and name to the file location.
+        """        
         with open(filepath, 'rb') as f:
             voxel_dict = pickle.load(f)
 
@@ -915,9 +960,9 @@ class DiscreteVoxel3D(DiscreteVoxel):
         permeation_probability_list = [vsl.permeation_probability for vsl in voxel.vessels]
 
         if extend:
-            dBz_grid = cls.dchi_mask_to_dBz_FFT(grid_dchi, 0, voxel.B0)
+            dBz_grid = cls._dchi_mask_to_dBz_FFT(grid_dchi, 0, voxel.B0)
         else:
-            dBz_grid = cls.dchi_mask_to_dBz_FFT(grid_dchi, padding, voxel.B0)
+            dBz_grid = cls._dchi_mask_to_dBz_FFT(grid_dchi, padding, voxel.B0)
 
         if extend and padding > 0:
             vessel_index_grid = vessel_index_grid[padding:-padding,padding:-padding,padding:-padding]
@@ -967,7 +1012,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
         for i, dchi in enumerate(dchi_list):
             grid_dchi[grid_dchi == i+1] = dchi
         
-        dBz_grid = cls.dchi_mask_to_dBz_FFT(grid_dchi, padding, B0)
+        dBz_grid = cls._dchi_mask_to_dBz_FFT(grid_dchi, padding, B0)
 
         return cls(
             vessel_index_grid=vessel_index_grid.astype(int),
@@ -1021,7 +1066,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
         else:
             raise Exception('`dchis` argument is neither a list nor a Numpy array.')
         
-        dBz_grid = cls.dchi_mask_to_dBz_FFT(grid_dchi, padding, B0)
+        dBz_grid = cls._dchi_mask_to_dBz_FFT(grid_dchi, padding, B0)
 
         return cls(
             vessel_index_grid=vessel_index_grid.astype(int),
@@ -1031,7 +1076,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
         )
 
     @staticmethod
-    def dchi_mask_to_dBz_FFT(
+    def _dchi_mask_to_dBz_FFT(
         dchi_grid: np.ndarray,
         padding: int,
         B0: float
@@ -1076,6 +1121,20 @@ class DiscreteVoxel3D(DiscreteVoxel):
         return dBz
     
     def show(self, show_dBz: bool=False, azimuth: float=50, elevation: float=60, distance: Optional[float]=None):
+        """Open a Mayavi window, showing a visual representation of the voxel.
+
+        Parameters
+        ----------
+        show_dBz : bool,
+            If True, shows isometric surfaces representing the magnetic field offset of the voxel. Otherwise, shows the vessel geometry. By default False.
+        azimuth : float, 
+            Azimuth angle of the camera (deg), by default 50
+        elevation : float, optional
+            Elevation angle of the camera (deg), by default 60
+        distance : Optional[float], optional
+            Distance between the center of the voxel and the camera. By default None, which sets the distance to 5 times the voxel size.
+        """
+
         if show_dBz:
             BOLDdisplay.mlab_plot_dBz_grid_3d(self.dBz_grid)
         else:
@@ -1097,6 +1156,15 @@ class DiscreteVoxel3D(DiscreteVoxel):
         mlab.show()
 
     def save(self, filepath: str, compress: bool=True):
+        """Save the voxel to a numpy file (.npz). Can be loaded later using the `load` class method.
+
+        Parameters
+        ----------
+        filepath : str
+            File path and name to the save location.
+        compress : bool
+            If True, compresses the file. Default is True.
+        """
 
         if compress:
             np.savez_compressed(
@@ -1117,7 +1185,13 @@ class DiscreteVoxel3D(DiscreteVoxel):
 
     @classmethod
     def load(cls, filepath: str):
+        """Load a voxel from a numpy file (.npz).
 
+        Parameters
+        ----------
+        filepath : str
+            Path and name to the file location.
+        """
         voxel_data = np.load(filepath)
 
         return cls(
@@ -1200,7 +1274,14 @@ class DiscreteVoxel2D(DiscreteVoxel):
         )
 
     def show(self, show_dBz: bool=False):
-        
+        """Open a Matplotlib window, showing a visual representation of the voxel.
+
+        Parameters
+        ----------
+        show_dBz : bool,
+            If True, shows the magnetic field offset of the voxel. Otherwise, shows the vessel geometry. By default False.
+        """
+
         if show_dBz:
             plt.imshow(self.dBz_grid.T, origin='lower', cmap='seismic')
         else:
@@ -1210,7 +1291,15 @@ class DiscreteVoxel2D(DiscreteVoxel):
         plt.show()
 
     def save(self, filepath: str, compress: bool=True):
+        """Save the voxel to a numpy file (.npz). Can be loaded later using the `load` class method.
 
+        Parameters
+        ----------
+        filepath : str
+            File path and name to the save location.
+        compress : bool
+            If True, compresses the file. Default is True.
+        """
         if compress:
             np.savez_compressed(
                 filepath,
@@ -1230,7 +1319,14 @@ class DiscreteVoxel2D(DiscreteVoxel):
 
     @classmethod
     def load(cls, filepath: str):
+        """Load a voxel from a numpy file (.npz).
 
+        Parameters
+        ----------
+        filepath : str
+            Path and name to the file location.
+        """
+        
         voxel_data = np.load(filepath)
 
         return cls(
