@@ -13,7 +13,7 @@ class Sequence:
     sample_shape : Union[int, Tuple[int, ...]]
         Shape of the `phase` and `is_IV` arrays that will be given at each time step. If `int`, assumes a 1D array with length `sample_shape`. If `Tuple[int, ...]`, takes this as the array shape.
     pulse_time_indices : List[int]
-        List of the number of times steps before each pulse is applied. For example, if it is `[0, 5, 10]`, and each step is 0.2ms, the pulses will be applied at the 0st, 10th and 20th time step, or at t=0ms, 2ms and 4ms. The pulses are always applied before dephasing is applied.
+        List of the number of times steps before each pulse is applied. For example, if it is `[0, 10, 20]`, and each step is 0.2ms, the pulses will be applied at the 0st, 10th and 20th time step, or at t=0ms, 2ms and 4ms. The pulses are always applied before dephasing is applied.
     pulse_angles : List[float]
         List of angle of each pulse (radians). Must be the same length as `pulse_time_indices`
     pulse_axes : List[List[float]]
@@ -164,7 +164,7 @@ class SpinSequence(Sequence):
     spins : BOLDspins.Spins
         Spins object on which the dephasing samples will be taken.
     pulse_time_indices : List[int]
-        List of the number of times steps before each pulse is applied. For example, if it is `[0, 5, 10]`, and each step is 0.2ms, the pulses will be applied at the 0st, 10th and 20th time step, or at t=0ms, 2ms and 4ms. The pulses are always applied before dephasing is applied.
+        List of the number of times steps before each pulse is applied. For example, if it is `[0, 10, 20]`, and each step is 0.2ms, the pulses will be applied at the 0st, 10th and 20th time step, or at t=0ms, 2ms and 4ms. The pulses are always applied before dephasing is applied.
     pulse_angles : List[float]
         List of angle of each pulse (radians). Must be the same length as `pulse_time_indices`
     pulse_axes : List[List[float]]
