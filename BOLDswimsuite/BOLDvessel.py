@@ -1249,6 +1249,27 @@ class Sphere3D:
         label: str='',
         rng: np.random.Generator = np.random.default_rng()
     ) -> Sphere3DNumba:
+        """Create a vessel with a randomly generated position.
+
+        Parameters
+        ----------
+        diameter : float
+            Vessel diameter (mm).
+        dchi : float
+            Susceptibility difference between the vessel and the surrounding tissue (cgs units).
+        voxel_size : float
+            Size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
+        permeation_probability : float, optional
+            Probability for a spin to permeate through the vessel wall (fraction of 1). By default 0.
+        label : str, optional
+           String to identify the vessel, by default ''.
+        rng : np.random.Generator, optional
+            Generator object for the random number generation, by default np.random.default_rng().
+
+        Returns
+        -------
+        Sphere3DNumba
+        """
 
         # generate a random point in the voxel
         origin = (rng.random(3) - 0.5) * voxel_size
@@ -1648,6 +1669,27 @@ class Sphere2D:
         label: str='',
         rng: np.random.Generator = np.random.default_rng()
     ) -> Sphere2DNumba:
+        """Create a vessel with a randomly generated position.
+
+        Parameters
+        ----------
+        diameter : float
+            Vessel diameter (mm).
+        dchi : float
+            Susceptibility difference between the vessel and the surrounding tissue (cgs units).
+        voxel_size : float
+            Size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
+        permeation_probability : float, optional
+            Probability for a spin to permeate through the vessel wall (fraction of 1). By default 0.
+        label : str, optional
+           String to identify the vessel, by default ''.
+        rng : np.random.Generator, optional
+            Generator object for the random number generation, by default np.random.default_rng().
+
+        Returns
+        -------
+        Sphere2DNumba
+        """      
 
         # generate a random point in the voxel
         origin = (rng.random(2) - 0.5) * voxel_size
