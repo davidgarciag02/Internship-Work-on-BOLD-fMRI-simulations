@@ -8,7 +8,7 @@ BOLDswimsuite.BOLDvessel module
 -------------------------------
 
 .. automodule:: BOLDswimsuite.BOLDvessel
-   :members: InfiniteCylinder3D, InfiniteCylinder2D, Sphere3D
+   :members: InfiniteCylinder3D, InfiniteCylinder2D, Sphere3D, Sphere2D
    :undoc-members:
    :show-inheritance:
 

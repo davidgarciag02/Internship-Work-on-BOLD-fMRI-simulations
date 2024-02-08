@@ -1620,7 +1620,7 @@ class Sphere2DNumba:
         return radial_distances, cos_thetas
 
 class Sphere2D:
-    """Object containing all parameters for an infinite cylinder vessel
+    """Object containing all parameters for an sphere vessel
 
     Parameters
     ----------

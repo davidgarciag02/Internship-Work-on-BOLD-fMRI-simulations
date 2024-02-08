@@ -15,7 +15,7 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
     geometry : BOLDgeometry.DiscreteVoxel2D
         2D discrete voxel to apply the deterministic diffusion to. Note that the vessel permeabilities defined in this object are superseded by the `permeable_vessels` parameter.
     pulse_time_indices : List[int]
-        List of the number of times steps before each pulse is applied. For example, if it is `[0, 5, 10]`, and each step is 0.2ms, the pulses will be applied at the 0st, 10th and 20th time step, or at t=0ms, 2ms and 4ms. The pulses are always applied before dephasing is applied.
+        List of the number of times steps before each pulse is applied. For example, if it is `[0, 10, 20]`, and each step is 0.2ms, the pulses will be applied at the 0st, 10th and 20th time step, or at t=0ms, 2ms and 4ms. The pulses are always applied before dephasing is applied.
     pulse_angles : List[float]
         List of angle of each pulse (radians). Must be the same length as `pulse_time_indices`
     pulse_axes : List[List[float]]
