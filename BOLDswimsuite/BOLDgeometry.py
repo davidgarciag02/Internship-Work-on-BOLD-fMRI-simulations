@@ -553,7 +553,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
         diameter_distributions: Dict[str, List[float]],
         dchis: Dict[str, float],
         permeation_probabilities: Optional[Dict[str, float]]=None,
-        vessel_type: Literal['cylinder']='cylinder',
+        vessel_type: Literal['cylinder', 'sphere']='cylinder',
         allow_vessel_intersection: bool = True,
         seed: Optional[int]=None,
         progressbar: bool=True
@@ -579,7 +579,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
         permeation_probabilities : Optional[Dict[str, float]], optional
             Dictionary with each group label (keys) and the permeation probability of each group (values). The permeation probability applies only to Monte Carlo simulations. Any spins diffusing across the vessel wall during a Monte Carlo step will have this probability of permeating through. The default value will set all probabilities to 0, making the vessels impermeable.
         vessel_type : str, optional
-            Type of vessel to generate. 'cylinder' will generate `BOLDvessel.InfiniteCylinder2D`. Default is 'cylinder'.
+            Type of vessel to generate. 'cylinder' will generate `BOLDvessel.InfiniteCylinder2D`. 'sphere' will generate `BOLDvessel.Sphere2D`. Default is 'cylinder'.
         allow_vessel_intersection : bool, optional
             When generating the vessels, whether to allow them to intersect. Setting to False in voxels with InfiniteCylinder3D vessels creates a voxel with non-uniform CBV. The default is True.
         seed : Optional[int], optional
@@ -602,6 +602,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
 
         str2vessel_class = {
             'cylinder': BOLDvessel.InfiniteCylinder2D,
+            'sphere': BOLDvessel.Sphere2D
         }
 
         vessel_class = str2vessel_class[vessel_type]
@@ -677,7 +678,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
         """Open a Matplotlib window, showing a visual representation of the voxel.
         """
 
-        BOLDdisplay.matplotlib_plot_infinite_cylinder_2d_list(self.vessels)
+        BOLDdisplay.matplotlib_plot_infinite_cylinder_or_sphere_2d_list(self.vessels)
 
         plt.gca().set_aspect('equal')
         plt.ylim([-self.size/2, self.size/2])
@@ -691,6 +692,8 @@ class ContinuousVoxel2D(ContinuousVoxel):
             vessel_tuple = vessel.to_tuple()
             if isinstance(vessel, BOLDvessel.InfiniteCylinder2DNumba):
                 vessel_type = 'InfiniteCylinder2D'
+            elif isinstance(vessel, BOLDvessel.Sphere2DNumba):
+                vessel_type = 'Sphere2D' 
             else:
                 raise Exception(f'{type(vessel)} is not supported for saving!') 
             vessel_tuple = (vessel_type, *vessel_tuple)     
@@ -748,6 +751,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
     
     def __repr__(self):
         n_infinite_cylinder_2d = 0
+        n_sphere_2d = 0
         n_unknown = 0
         
         repr_str = f'ContinuousVoxel2D( size={self.size}, B0={self.B0}'
@@ -755,11 +759,15 @@ class ContinuousVoxel2D(ContinuousVoxel):
         for vessel in self.vessels:
             if isinstance(vessel, BOLDvessel.InfiniteCylinder2DNumba):
                 n_infinite_cylinder_2d += 1
+            elif isinstance(vessel, BOLDvessel.Sphere2DNumba):
+                n_sphere_2d += 1
             else:
                 n_unknown += 1
         
         if n_infinite_cylinder_2d > 0:
-            repr_str += f', {n_infinite_cylinder_2d} InfiniteCylinder2D' 
+            repr_str += f', {n_infinite_cylinder_2d} InfiniteCylinder2D'
+        if n_sphere_2d > 0:
+            repr_str += f', {n_sphere_2d} Sphere2D'
         if n_unknown > 0:
             repr_str += f', {n_unknown} unknown'
         

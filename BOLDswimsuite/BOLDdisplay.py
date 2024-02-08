@@ -63,11 +63,11 @@ def mlab_plot_is_IV_grid_3d(is_IV_grid: np.ndarray):
     is_IV_grid = is_IV_grid.astype(float)
     mlab.contour3d(is_IV_grid, contours=2, transparent=False)
 
-def matplotlib_plot_infinite_cylinder_2d_list(vessels: List[BOLDvessel.InfiniteCylinder2DNumba]):
+def matplotlib_plot_infinite_cylinder_or_sphere_2d_list(vessels: List[BOLDvessel.InfiniteCylinder2DNumba]):
     
     fig = plt.gcf()
     ax = fig.gca()
     for vessel in vessels:
-        circle = plt.Circle(vessel.origin, vessel.diameter/2)
+        circle = plt.Circle(vessel.origin, vessel.diameter/2, facecolor='r')
         ax.add_patch(circle)
 
