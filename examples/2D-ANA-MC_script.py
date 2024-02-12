@@ -24,7 +24,7 @@ def main():
         diameter_distributions={'vesselGroup1': [vessel_diameter]},
         dchis={'vesselGroup1': 3e-8},
         permeation_probabilities={'vesselGroup1': 0},
-        vessel_type='cylinder',
+        vessel_type='sphere',
         allow_vessel_intersection=True,
         seed=1,
         progressbar=True

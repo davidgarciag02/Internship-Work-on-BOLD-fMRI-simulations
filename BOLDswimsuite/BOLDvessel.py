@@ -8,6 +8,7 @@ import numpy as np
 from numba import float64, uint8, types   # import the types
 from numba.experimental import jitclass
 from typing import Union, Tuple
+import warnings
 
 spec_infinite_cylinder_3D = [
     ('label', types.unicode_type),
@@ -1690,6 +1691,8 @@ class Sphere2D:
         -------
         Sphere2DNumba
         """      
+
+        warnings.warn('Randomly generated 2D spheres have not been validated.')
 
         # generate a random point in the voxel
         origin = (rng.random(2) - 0.5) * voxel_size
