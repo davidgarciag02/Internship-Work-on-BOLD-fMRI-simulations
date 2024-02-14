@@ -235,9 +235,11 @@ class SpinSequence(Sequence):
         if self._curr_step != 0:
             warnings.warn('The walk is not on the 0th step of the sequence!')
 
-        eviv = np.zeros(num_steps) 
-        ev = np.zeros(num_steps)
-        iv = np.zeros(num_steps)
+        dtype = float if not cplx else complex
+
+        eviv = np.zeros(num_steps, dtype=dtype) 
+        ev = np.zeros(num_steps, dtype=dtype)
+        iv = np.zeros(num_steps, dtype=dtype)
 
         text = 'Walking Through'
         for j in tqdm(range(num_steps), desc=text, disable=not progressbar):

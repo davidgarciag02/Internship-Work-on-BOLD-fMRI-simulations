@@ -37,7 +37,7 @@ def main():
         voxel=voxel1
     )
 
-    filepath = r'C:\Users\jacob\Documents\Github\BOLDswimsuite\examples\voxel1.npz'
+    filepath = r'2d_discrete_voxel1.npz'
 
     dvoxel1.save(filepath)
 

@@ -32,7 +32,7 @@ def main():
     )
     print(voxel1)
 
-    filepath = r'C:\Users\jacob\Documents\Github\BOLDswimsuite\examples\voxel1.pkl'
+    filepath = r'3d_continuous_voxel1.pkl'
 
     voxel1.save(filepath)
 
