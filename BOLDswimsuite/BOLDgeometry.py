@@ -90,7 +90,7 @@ class Voxel:
         pass
 
     def _validate_positions(self, positions: np.ndarray) -> None:
-        """Validates the `position` argument for other functions in `Geometry`.
+        """Validates the `position` argument for other functions in `Voxel`.
 
         Parameters
         ----------
