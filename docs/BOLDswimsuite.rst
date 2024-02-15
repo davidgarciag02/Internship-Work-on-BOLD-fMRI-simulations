@@ -17,7 +17,7 @@ BOLDswimsuite.BOLDgeometry module
 
 .. automodule:: BOLDswimsuite.BOLDgeometry
    :members: ContinuousVoxel3D, ContinuousVoxel2D, DiscreteVoxel3D, DiscreteVoxel2D
-   :undoc-members:
+   :inherited-members:
    :show-inheritance:
 
 BOLDswimsuite.BOLDspins module
@@ -25,7 +25,7 @@ BOLDswimsuite.BOLDspins module
 
 .. automodule:: BOLDswimsuite.BOLDspins
    :members: Spins3D, Spins2D
-   :undoc-members:
+   :inherited-members:
    :show-inheritance:
 
 BOLDswimsuite.BOLDsequence module

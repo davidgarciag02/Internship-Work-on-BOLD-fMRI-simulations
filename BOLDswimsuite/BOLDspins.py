@@ -28,7 +28,7 @@ class Spins:
         ndims: int,
         ADC: float,
         num_spins: int,
-        geometry: BOLDgeometry.Geometry,
+        geometry: BOLDgeometry.Voxel,
         dt: float,
         IV: bool=True,
         seed: Optional[int]=None
@@ -108,24 +108,26 @@ class Spins:
         fix_spins_indices = np.array(fix_spins_indices, dtype=int)
         fix_vessel_indices = self.vessel_indices[fix_spins_indices]
 
-        num_fix = fix_spins_indices.size
-
         #recalculate the phase of the incorrect spins
-        while num_fix > 0:
-            # checks if new spin positions are IV and calculates dBz and phase
+        while fix_spins_indices.size > 0:
+            # propose new moves for spins that need to be fixed
             new_positions[fix_spins_indices, :] = self.geometry.wrap_boundary_positions(
-                self.positions[fix_spins_indices, :] + diffusion_length * self.rng.normal(size=(num_fix, self._ndims))
+                self.positions[fix_spins_indices, :] + diffusion_length * self.rng.normal(size=(fix_spins_indices.size, self._ndims))
             )
             
+            # calculate dBz and vessel indices for the new moves
             fix_dBz, fix_new_vessel_indices = self.geometry.dBz_vessel_indices_from_positions(positions=new_positions[fix_spins_indices, :])
 
+            # change the overall dBz and vessel indices variables to the proposed values
             dBz[fix_spins_indices] = fix_dBz
             new_vessel_indices[fix_spins_indices] = fix_new_vessel_indices
 
-            fix_spins_indices = fix_spins_indices[fix_vessel_indices != fix_new_vessel_indices]
-            fix_vessel_indices = fix_vessel_indices[fix_vessel_indices != fix_new_vessel_indices]
-            
-            num_fix = fix_spins_indices.size
+            # check if any spins still need fixing
+            fix_indices = fix_vessel_indices != fix_new_vessel_indices
+
+            # update fix variables for next iteration
+            fix_spins_indices = fix_spins_indices[fix_indices]
+            fix_vessel_indices = fix_vessel_indices[fix_indices]
 
         # new position becomes the previous position
         self.phase = dBz * phase_conversion_factor

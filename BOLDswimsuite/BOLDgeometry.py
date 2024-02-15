@@ -15,10 +15,7 @@ def size_from_k(diameter: float, k: float, ADC: float, dt: float) -> float:
     
     return 2 * (A + k * diameter / 2)
 
-class Geometry:
-
-    def __init__(self, ndims: int):
-        self._ndims = ndims
+class Voxel:
 
     def vessel_indices_from_positions(self, positions: np.ndarray) -> np.ndarray:
         """Given an array of positions, returns the vessel index of each position.
@@ -108,9 +105,9 @@ class Geometry:
 
         if len(positions.shape) == 2 and positions.shape[1] == self._ndims and issubclass(positions.dtype.type, np.floating):
             return
-        raise Exception(f'\'positions\' must be a Numpy floating point array or shape (N, {self._ndims})')
+        raise Exception(f'\'positions\' must be a Numpy floating point array of shape (N, {self._ndims})')
 
-class ContinuousVoxel(Geometry):
+class ContinuousVoxel(Voxel):
     
     def __init__(
         self,
@@ -120,7 +117,7 @@ class ContinuousVoxel(Geometry):
         vessels: Optional[Union[List[BOLDvessel.Vessel3D], List[BOLDvessel.Vessel2D]]]=None
     ):
         self.vessels = vessels if vessels is not None else []
-        self.size: float = size
+        self.size = size
         self.B0 = B0
         self._ndims = ndims
     
@@ -775,7 +772,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
 
         return repr_str
 
-class DiscreteVoxel(Geometry):
+class DiscreteVoxel(Voxel):
 
     def __init__(
         self,
