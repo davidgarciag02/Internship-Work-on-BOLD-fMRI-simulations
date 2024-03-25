@@ -47,7 +47,7 @@ This will install all the dependencies required and create the virtual environme
 To test if everything installed properly, from the same directory in the command line, execute the following: 
 
 ```
-poetry run python .\examples\plotSignalScript3D.py
+poetry run python .\examples\3D-ANA-MC_script.py.py
 ```
 
 This should run a short simulation and output an image with three plots, showing the different signals.
