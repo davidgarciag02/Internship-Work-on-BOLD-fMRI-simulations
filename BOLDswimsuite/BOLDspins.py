@@ -14,8 +14,8 @@ class Spins:
         Apparent diffusion coefficient (mm^2/s).
     num_spins : int
         Number of spins to simulate.
-    geometry : BOLDgeometry.Geometry
-        Geometry in which the spins will diffuse.
+    geometry : BOLDgeometry.Voxel
+        Voxel in which the spins will diffuse.
     dt : float
         Time step length for the inital phase calculation (ms).
     IV : bool, optional
