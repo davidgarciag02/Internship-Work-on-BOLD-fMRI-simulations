@@ -24,6 +24,14 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         Apparent diffusion coefficient (mm^2/s).
     dt : float
         Time step length for the inital phase calculation (ms).
+    T2EV: Optional[float]
+        T2 value for the extravascular space (ms). By default no T2EV is applied.
+    T2IV: Optional[float]
+        T2 value for the intravascular space (ms). By default no T2IV is applied.
+    T1EV: Optional[float]
+        T1 value for the extravascular space (ms). By default no T1EV is applied.
+    T1IV: Optional[float]
+        T1 value for the intravascular space (ms). By default no T1IV is applied.
     kernel_type : Literal['ModifiedBessel', 'Gaussian']
         The type of convolution kernel to use. Default is 'ModifiedBessel'.
     permeable_vessels : bool
@@ -38,6 +46,10 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         pulse_axes: List[List[float]],
         ADC: float,
         dt: float,
+        T2EV: Optional[float]=None,
+        T2IV: Optional[float]=None,
+        T1EV: Optional[float]=None,
+        T1IV: Optional[float]=None,
         kernel_type: Literal['ModifiedBessel', 'Gaussian']='ModifiedBessel',
         permeable_vessels: bool=False
     ):     
@@ -53,7 +65,11 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
             sample_shape=geometry.dBz_grid.shape,
             pulse_time_indices=pulse_time_indices,
             pulse_angles=pulse_angles,
-            pulse_axes=pulse_axes                
+            pulse_axes=pulse_axes,
+            T2EV=T2EV,
+            T2IV=T2IV,
+            T1EV=T1EV,
+            T1IV=T1IV           
         )
 
     def step(
@@ -94,6 +110,21 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
             self.Mx, self.My = self._unrestricted_diffusion_convolution(self.Mx, self.My, self.kernel, self.kernel_type) 
         else:
             self.Mx, self.My = self._restricted_diffusion_convolution(self.Mx, self.My, is_IV, not_is_IV, self.kernel, self.kernel_type) 
+
+        if self.T2EV is not None:
+            E2 = np.exp(-dt/self.T2EV)
+            self.Mx[np.logical_not(is_IV)] *= E2
+            self.My[np.logical_not(is_IV)] *= E2
+        if self.T2IV is not None:
+            E2 = np.exp(-dt/self.T2IV)
+            self.Mx[is_IV] *= E2
+            self.My[is_IV] *= E2
+        if self.T1EV is not None:
+            E1 = np.exp(-dt/self.T1EV)
+            self.Mz[np.logical_not(is_IV)] = self.Mz[np.logical_not(is_IV)]*E1+(1-E1)
+        if self.T1IV is not None:
+            E2 = np.exp(-dt/self.T1IV)
+            self.Mz[is_IV] = self.Mz[is_IV]*E1+(1-E1)
 
         # calculating the transverse magnetization using the complex notation
         Mxy = self.Mx + 1j * self.My

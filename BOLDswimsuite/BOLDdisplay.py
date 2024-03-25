@@ -19,7 +19,6 @@ def mlab_plot_infinite_cylinder_3d(vessel: BOLDvessel.InfiniteCylinder3DNumba, s
         curr_pos = np.array(origin, copy=True)
         for i in range(axial_points_per_size):
             if in_bounds:
-                print('in bounds found')
                 origin = np.array(curr_pos, copy=True)
                 break
             curr_pos += vessel.normal_vector/axial_points_per_mm
@@ -29,14 +28,12 @@ def mlab_plot_infinite_cylinder_3d(vessel: BOLDvessel.InfiniteCylinder3DNumba, s
         curr_pos = np.array(origin, copy=True)
         for i in range(axial_points_per_size):
             if in_bounds:
-                print('in bounds found')
                 origin = np.array(curr_pos, copy=True)
                 break
             curr_pos -= vessel.normal_vector/axial_points_per_mm
             in_bounds = np.all(np.logical_and(curr_pos < radius_size, curr_pos > -radius_size))            
 
     if not in_bounds:
-        print('in of bounds not found')
         return
 
     curr_pos = np.array(origin, copy=True)
