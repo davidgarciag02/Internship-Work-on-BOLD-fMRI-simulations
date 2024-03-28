@@ -16,7 +16,6 @@ Once installed, the following steps can be followed to add the package to your c
 2. At the top left (under file), click on the "Current Repository" button.
 3. Change the repository to "BOLDswimsuite".
 4. Clone the repository.
-5. Click on "Current Branch" and switch to "development" (currently needed until the branch is merged with main). 
 >Note: Make sure to know where the Github folder is one your computer, this is where the package is located and we will need it during the creation of the Python virtual environment.
 
 ## 2. Installing Python
