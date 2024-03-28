@@ -8,6 +8,7 @@ import numpy as np
 from numba import float64, uint8, types   # import the types
 from numba.experimental import jitclass
 from typing import Union, Tuple
+import warnings
 
 spec_infinite_cylinder_3D = [
     ('label', types.unicode_type),
@@ -285,6 +286,18 @@ class InfiniteCylinder3DNumba:
         volume_fraction = volume / total_volume
 
         return volume_fraction
+    
+    def to_tuple(self):
+        d = (
+            self.diameter,
+            self.theta, 
+            self.phi, 
+            self.origin, 
+            self.dchi, 
+            self.permeation_probability,
+            self.label
+        )
+        return d
 
     def _radial_vectors_from_positions(self, positions):
         # https://math.stackexchange.com/questions/1905533/find-perpendicular-distance-from-point-to-line-in-3d
@@ -406,6 +419,18 @@ class InfiniteCylinder3D:
             permeation_probability
         )
 
+    @staticmethod
+    def from_tuple(t: tuple):
+        return InfiniteCylinder3DNumba(
+            label=t[6],
+            diameter=t[0],
+            theta=t[1],
+            phi=t[2],
+            origin=t[3],
+            dchi=t[4],
+            permeation_probability=t[5]
+        )
+
     def is_IV_dBz(self, positions: np.ndarray, B0: float) -> Tuple[np.ndarray, np.ndarray, float]:
         """Given an array of positions and a magnetic field strength for B0, returns whether the positions are intravascular and the dBz magnetic field offset.
 
@@ -503,7 +528,6 @@ class InfiniteCylinder3D:
             Estimated volume fraction.
         """
         pass
-
 
 spec_infinite_cylinder_2D = [
     ('label', types.unicode_type),
@@ -751,7 +775,19 @@ class InfiniteCylinder2DNumba:
         volume_fraction = vessel_volume/total_volume
 
         return volume_fraction
-
+    
+    def to_tuple(self):
+        d = (
+            self.diameter,
+            self.theta, 
+            self.phi, 
+            self.origin, 
+            self.dchi, 
+            self.permeation_probability,
+            self.label
+        )
+        return d
+    
     def _radial_distances_and_angles_from_positions(self, points):
 
         #finding the distance between the central axis of the vessel and the point
@@ -854,7 +890,19 @@ class InfiniteCylinder2D:
             dchi,
             permeation_probability,
         )
-
+    
+    @staticmethod
+    def from_tuple(t: tuple):
+        return InfiniteCylinder2DNumba(
+            label=t[6],
+            diameter=t[0],
+            B0_theta=t[1],
+            B0_phi=t[2],
+            origin=t[3],
+            dchi=t[4],
+            permeation_probability=t[5]
+        )
+    
     def is_IV_dBz(self, positions: np.ndarray, B0: float) -> Tuple[np.ndarray, np.ndarray, float]:
         """Given an array of positions and a magnetic field strength for B0, returns whether the positions are intravascular and the dBz magnetic field offset.
 
@@ -1140,7 +1188,17 @@ class Sphere3DNumba:
         volume_fraction = sphere_volume / total_volume
 
         return volume_fraction
-
+    
+    def to_tuple(self):
+        d = (
+            self.diameter,
+            self.origin, 
+            self.dchi, 
+            self.permeation_probability,
+            self.label
+        )
+        return d
+    
     def _radial_distances_and_angles(self, positions):
         # finding the distance between the center of the vessel and the point
         radial_vectors = positions-self.origin
@@ -1191,7 +1249,28 @@ class Sphere3D:
         permeation_probability: float=0,
         label: str='',
         rng: np.random.Generator = np.random.default_rng()
-    ) -> InfiniteCylinder3DNumba:
+    ) -> Sphere3DNumba:
+        """Create a vessel with a randomly generated position.
+
+        Parameters
+        ----------
+        diameter : float
+            Vessel diameter (mm).
+        dchi : float
+            Susceptibility difference between the vessel and the surrounding tissue (cgs units).
+        voxel_size : float
+            Size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
+        permeation_probability : float, optional
+            Probability for a spin to permeate through the vessel wall (fraction of 1). By default 0.
+        label : str, optional
+           String to identify the vessel, by default ''.
+        rng : np.random.Generator, optional
+            Generator object for the random number generation, by default np.random.default_rng().
+
+        Returns
+        -------
+        Sphere3DNumba
+        """
 
         # generate a random point in the voxel
         origin = (rng.random(3) - 0.5) * voxel_size
@@ -1204,6 +1283,447 @@ class Sphere3D:
             dchi,
             permeation_probability
         )
+    
+    @staticmethod
+    def from_tuple(t: tuple):
+        return Sphere3DNumba(
+            label=t[4],
+            diameter=t[0],
+            origin=t[1],
+            dchi=t[2],
+            permeation_probability=t[3]
+        )
+
+    def is_IV_dBz(self, positions: np.ndarray, B0: float) -> Tuple[np.ndarray, np.ndarray, float]:
+        """Given an array of positions and a magnetic field strength for B0, returns whether the positions are intravascular and the dBz magnetic field offset.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+        B0 : float
+            B0 magnetic field strength (Tesla).
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray, float]
+            3 element Tuple. The first element is a boolean array, indicating for each position if it is intravascular. The second element is an array with the extravascular dBz magnetic field offset of each position. The third element is the intravascular dBz magnetic offset (a single value as it is constant). 
+            
+            Note that the extravascular dBz is also provided for intravascular positions. In most cases this can be ignored, but is sometimes required during simulations. 
+        """
+        pass
+
+    def is_IV(self, positions: np.ndarray) -> np.ndarray:
+        """Given an array of positions, returns whether the positions are intravascular.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array, indicating for each position if it is intravascular.
+        """
+        pass
+
+    def dBz_EV(self, positions, B0):
+        """Given an array of positions and a magnetic field strength for B0, returns the extravascular dBz magnetic field offset.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+        B0 : float
+            B0 magnetic field strength (Tesla).
+
+        Returns
+        -------
+        np.ndarray
+            Array with the extravascular dBz magnetic field offset of each position.
+            
+            Note that the extravascular dBz is also provided for intravascular positions. In most cases this can be ignored, but is sometimes required during simulations. 
+        """
+        pass
+    
+    def dBz_IV(self, B0: float) -> float:
+        """Given a magnetic field strength for B0, returns whether the positions are intravascular and the dBz magnetic field offset.
+
+        Parameters
+        ----------
+        B0 : float
+            B0 magnetic field strength (Tesla).
+
+        Returns
+        -------
+        float
+            The intravascular dBz magnetic offset.
+        """
+        pass
+
+    def intersects(self, other: Sphere3DNumba) -> bool:
+        """Given another 3D sphere object, returns whether the two vessels intersect.
+
+        Parameters
+        ----------
+        other : Sphere3D
+            Another 3D sphere object.
+
+        Returns
+        -------
+        bool
+            Returns True if the vessels intersect and False otherwise.
+        """
+        pass
+
+    def volume_fraction(self, voxel_size: float) -> float:
+        """Given the side length of an isometric voxel, returns an estimate of the volume fraction that the vessel occupies in that space.
+
+        Parameters
+        ----------
+        voxel_size : float
+            Side length of the isometric voxel.
+
+        Returns
+        -------
+        float
+            Estimated volume fraction.
+        """
+        pass
+
+
+spec_sphere_2D = [
+    ('label', types.unicode_type),
+    ('diameter', float64),
+    ('theta', float64),
+    ('phi', float64),
+    ('origin', float64[:]),
+    ('dchi', float64),
+    ('permeation_probability', float64),
+    ('B0_direction_vector', float64[:]),
+]
+
+@jitclass(spec_sphere_2D)
+class Sphere2DNumba:
+
+    def __init__(self,
+        label: str,
+        diameter: float,
+        B0_theta: float, 
+        B0_phi: float, 
+        origin: np.ndarray,
+        dchi: float,
+        permeation_probability: float
+    ):
+        """Object containing all parameters for a sphere vessel
+
+        Parameters
+        ----------
+        label : uint8[:]
+            uft-8 encoded string, to identify the vessel.
+        diameter : float64
+            vessel diameter (mm)
+        B0_theta : float64
+            zenith angle of the B0 direction (radians)
+        B0_phi : float64
+            azimuth angle of the B0 direction (radians)
+        origin : float64[:]
+            cartesian coordinates of the vessel origin (mm)
+        dchi : float64
+            susceptibility difference between the vessel and the surrounding tissue (cgs units)
+        permeation_probability : float64
+            probability for a spin to permeate through the vesel wall (fraction of 1)
+        """
+
+        # initializing the vessel parameters to the vessel object
+        self.label = label
+        self.diameter = diameter
+        self.theta = B0_theta
+        self.phi = B0_phi
+        self.origin = origin
+        self.dchi = dchi
+        self.permeation_probability = permeation_probability  # for compatibility
+
+        self.B0_direction_vector = np.array(
+            [
+                np.sin(self.theta)*np.cos(self.phi),
+                np.sin(self.theta)*np.sin(self.phi),
+                np.cos(self.theta)
+            ]
+        )
+
+
+    def is_IV_dBz(self, positions: np.ndarray, B0: float) -> Tuple[np.ndarray, np.ndarray, float]:
+        """Given an array of positions and a magnetic field strength for B0, returns whether the positions are intravascular and the dBz magnetic field offset.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+        B0 : float
+            B0 magnetic field strength (Tesla).
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray, float]
+            3 element Tuple. The first element is a boolean array, indicating for each position if it is intravascular. The second element is an array with the extravascular dBz magnetic field offset of each position. The third element is the intravascular dBz magnetic offset (a single value as it is constant). 
+            
+            Note that the extravascular dBz is also provided for intravascular positions. In most cases this can be ignored, but is sometimes required during simulations. 
+        """
+
+        # finding the phi angle and r distance for all points
+        radial_distances, cos_thetas = self._radial_distances_and_angles(positions)
+
+        # calculating field offset using the appropriate equation (dChi in cgs, angles in radians, lengths in mm)
+        dBz_EV = B0*4/3*np.pi*self.dchi * \
+            ((0.5*self.diameter/radial_distances)**3)*(3*cos_thetas**2-1)
+
+        is_IV = radial_distances < self.diameter/2
+
+        return is_IV, dBz_EV, 0
+
+    def is_IV(self, positions: np.ndarray) -> np.ndarray:
+        """Given an array of positions, returns whether the positions are intravascular.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array, indicating for each position if it is intravascular.
+        """
+
+        positions0 = positions-self.origin
+
+        # check if the point(s) are inside the vessle using the cylinder equation
+        is_IV = positions0[:, 0]**2 + positions0[:, 1]**2 <= (self.diameter/2)**2
+
+        return is_IV
+
+    def grid_is_IV(self, N, subvox_size):
+        grid_origin = self.origin / subvox_size + (N/2)
+
+        X = np.reshape(np.arange(N), (N,1)) - grid_origin[0]
+        Y = np.reshape(np.arange(N), (1,N)) - grid_origin[1]
+
+        grid_radius = (self.diameter/2) / subvox_size
+
+        is_IV = X**2 + Y**2 <= grid_radius**2
+
+        return is_IV
+
+    def dBz_EV(self, positions: np.ndarray, B0: float) -> np.ndarray:
+        """Given an array of positions and a magnetic field strength for B0, returns the extravascular dBz magnetic field offset.
+
+        Parameters
+        ----------
+        positions : np.ndarray
+            Array of floats with shape (N, d), where N is the number of positions and d is the number of dimensions (e.g. 2 positions in a 3D space would require an array of shape (2, 3)).
+        B0 : float
+            B0 magnetic field strength (Tesla).
+
+        Returns
+        -------
+        np.ndarray
+            Array with the extravascular dBz magnetic field offset of each position.
+            
+            Note that the extravascular dBz is also provided for intravascular positions. In most cases this can be ignored, but is sometimes required during simulations. 
+        """
+
+        # finding the phi angle and r distance for all points
+        radial_distances, cos_thetas = self._radial_distances_and_angles(positions)
+
+        # calculating field offset using the appropriate equation (dChi in cgs, angles in radians, lengths in mm)
+        dBz = B0*4/3*np.pi*self.dchi*((0.5*self.diameter/radial_distances)**3)*(3*cos_thetas**2-1)
+
+        return dBz
+
+    def dBz_IV(self, B0: float) -> float:
+        """Given a magnetic field strength for B0, returns whether the positions are intravascular and the dBz magnetic field offset.
+
+        Parameters
+        ----------
+        B0 : float
+            B0 magnetic field strength (Tesla).
+
+        Returns
+        -------
+        float
+            The intravascular dBz magnetic offset.
+        """
+
+        # intravascular component is 0
+        return 0
+
+    def intersects(self, other: Sphere2DNumba) -> bool:
+        """Given another 2D sphere object, returns whether the two vessels intersect.
+
+        Parameters
+        ----------
+        other : Sphere2DNumba
+            Another 2D sphere object.
+
+        Returns
+        -------
+        bool
+            Returns True if the vessels intersect and False otherwise.
+        """
+
+        vector = self.origin - other.origin
+        distance = np.sqrt(vector[0]**2 + vector[1]**2)
+
+        intersects = distance < (self.diameter + other.diameter)/2
+
+        return intersects
+    
+    def volume_fraction(self, voxel_size: float) -> float:
+        """Given the side length of an isometric voxel, returns an estimate of the volume fraction that the vessel occupies in that space.
+
+        Parameters
+        ----------
+        voxel_size : float
+            Side length of the isometric voxel.
+
+        Returns
+        -------
+        float
+            Estimated volume fraction.
+        """
+        total_volume = voxel_size**2*self.diameter
+        sphere_volume = 4 / 3 * np.pi * (self.diameter / 2)**3
+        volume_fraction = sphere_volume / total_volume
+
+        return volume_fraction
+    
+    def to_tuple(self):
+        d = (
+            self.diameter,
+            self.theta, 
+            self.phi, 
+            self.origin, 
+            self.dchi, 
+            self.permeation_probability,
+            self.label
+        )
+        return d
+    
+    def _radial_distances_and_angles(self, positions):
+        # finding the distance between the center of the vessel and the point
+        radial_vectors = positions-self.origin
+        radial_distances = np.sqrt(radial_vectors[:, 0]**2 + radial_vectors[:, 1]**2)
+
+        cos_thetas = np.dot(radial_vectors, np.ascontiguousarray(self.B0_direction_vector[:2]))/radial_distances
+
+        return radial_distances, cos_thetas
+
+class Sphere2D:
+    """Object containing all parameters for an sphere vessel
+
+    Parameters
+    ----------
+    diameter : float
+        vessel diameter (mm)
+    B0_theta : float
+        Zenith angle of the B0 direction (radians).
+    B0_phi : float
+        Azimuth angle of the B0 direction (radians).
+    origin : np.ndarray
+        cartesian coordinates of the vessel origin (mm)
+    dchi : float
+        susceptibility difference between the vessel and the surrounding tissue (cgs units)
+    permeation_probability : float
+        probability for a spin to permeate through the vessel wall (fraction of 1)
+    label : str
+        string to identify the vessel.
+    """
+    def __new__(
+        cls,
+        diameter: float,
+        B0_theta: float, 
+        B0_phi: float, 
+        origin: np.ndarray, 
+        dchi: float, 
+        permeation_probability: float=0,
+        label: str=''
+    ):
+    
+        return Sphere2DNumba(
+            label=label,
+            diameter=diameter,
+            B0_theta=B0_theta, 
+            B0_phi=B0_phi, 
+            origin=origin,
+            dchi=dchi, 
+            permeation_probability=permeation_probability 
+        )
+
+    @staticmethod
+    def from_random(
+        diameter: float, 
+        dchi: float,
+        voxel_size: float,
+        permeation_probability: float=0,
+        label: str='',
+        rng: np.random.Generator = np.random.default_rng()
+    ) -> Sphere2DNumba:
+        """Create a vessel with a randomly generated position.
+
+        Parameters
+        ----------
+        diameter : float
+            Vessel diameter (mm).
+        dchi : float
+            Susceptibility difference between the vessel and the surrounding tissue (cgs units).
+        voxel_size : float
+            Size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
+        permeation_probability : float, optional
+            Probability for a spin to permeate through the vessel wall (fraction of 1). By default 0.
+        label : str, optional
+           String to identify the vessel, by default ''.
+        rng : np.random.Generator, optional
+            Generator object for the random number generation, by default np.random.default_rng().
+
+        Returns
+        -------
+        Sphere2DNumba
+        """      
+
+        warnings.warn('Randomly generated 2D spheres have not been validated.')
+
+        # generate a random point in the voxel
+        origin = (rng.random(2) - 0.5) * voxel_size
+        
+        #TODO may not be accurate
+        B0_theta=np.arccos(2*rng.random()-1)
+        B0_phi=2*np.pi*rng.random()       
+
+        # return vessel object with the generated components
+        return Sphere2DNumba(
+            label,
+            diameter,
+            B0_theta,
+            B0_phi,
+            origin,
+            dchi,
+            permeation_probability
+        )
+    
+    @staticmethod
+    def from_tuple(t: tuple):
+        return Sphere2DNumba(
+            label=t[6],
+            diameter=t[0],
+            B0_theta=t[1],
+            B0_phi=t[2],
+            origin=t[3],
+            dchi=t[4],
+            permeation_probability=t[5]
+        )
+
     def is_IV_dBz(self, positions: np.ndarray, B0: float) -> Tuple[np.ndarray, np.ndarray, float]:
         """Given an array of positions and a magnetic field strength for B0, returns whether the positions are intravascular and the dBz magnetic field offset.
 
@@ -1303,4 +1823,4 @@ class Sphere3D:
         pass
 
 Vessel3D = Union[InfiniteCylinder3DNumba, Sphere3DNumba]
-Vessel2D = InfiniteCylinder2DNumba
+Vessel2D = Union[InfiniteCylinder2DNumba, Sphere2DNumba]

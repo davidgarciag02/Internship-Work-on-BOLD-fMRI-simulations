@@ -2,6 +2,7 @@
 from BOLDswimsuite import BOLDgeometry, BOLDsequence, BOLDspins
 import matplotlib.pyplot as plt
 import numpy as np
+import pickle
 
 def main():
 
@@ -10,12 +11,12 @@ def main():
 
     size = BOLDgeometry.size_from_k(
         diameter=vessel_diameter, 
-        k=40,
+        k=20,
         ADC=0.001,
         dt=0.2
     )
     
-    continuous_voxel = BOLDgeometry.ContinuousVoxel2D.from_random(
+    voxel1 = BOLDgeometry.ContinuousVoxel3D.from_random(
         size=size,
         CBV=0.02,
         B0=3,
@@ -29,20 +30,19 @@ def main():
         seed=1,
         progressbar=True
     )
+    print(voxel1)
 
-    print(continuous_voxel)
+    filepath = r'3d_continuous_voxel1.pkl'
 
-    discrete_voxel = BOLDgeometry.DiscreteVoxel2D.from_continuous_analytical(
-        N=200,
-        voxel=continuous_voxel
-    )
+    voxel1.save(filepath)
 
-    discrete_voxel.show(show_dBz=True)
+    voxel = BOLDgeometry.ContinuousVoxel3D.load(filepath)
+
         
-    spins = BOLDspins.Spins2D(
+    spins = BOLDspins.Spins3D(
         ADC=0.001,
         num_spins=10_000,
-        geometry=discrete_voxel,
+        geometry=voxel,
         dt=0.2,
         IV=True,
         seed=1
@@ -52,7 +52,7 @@ def main():
         spins=spins,
         pulse_time_indices=[0, 175],
         pulse_angles=[np.pi/2, np.pi],
-        pulse_axes=[[np.pi/2, np.pi/2], [np.pi/2, 0]]      
+        pulse_axes=['y', 'x']      
     )
 
     eviv, ev, iv = sequence.walk(

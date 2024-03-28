@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 from tqdm import tqdm
 import warnings
 from .BOLDconstants import *
@@ -13,11 +13,19 @@ class Sequence:
     sample_shape : Union[int, Tuple[int, ...]]
         Shape of the `phase` and `is_IV` arrays that will be given at each time step. If `int`, assumes a 1D array with length `sample_shape`. If `Tuple[int, ...]`, takes this as the array shape.
     pulse_time_indices : List[int]
-        List of the number of times steps before each pulse is applied. For example, if it is `[0, 5, 10]`, and each step is 0.2ms, the pulses will be applied at the 0st, 10th and 20th time step, or at t=0ms, 2ms and 4ms. The pulses are always applied before dephasing is applied.
+        List of the number of times steps before each pulse is applied. For example, if it is `[0, 10, 20]`, and each step is 0.2ms, the pulses will be applied at the 0st, 10th and 20th time step, or at t=0ms, 2ms and 4ms. The pulses are always applied before dephasing is applied.
     pulse_angles : List[float]
         List of angle of each pulse (radians). Must be the same length as `pulse_time_indices`
     pulse_axes : List[List[float]]
         List of rotation axes, in polar coordinates (radians). Each axis in the list is a 2-element list with the form `[phi,theta]`. For example, a pulse on the x-axis will be represented as `[np.pi/2, 0]` and a pules on the y-axis will be represented as `[np.pi/2, np.pi/2]`.
+    T2EV: Optional[float]
+        T2 value for the extravascular space (ms). By default no T2EV is applied.
+    T2IV: Optional[float]
+        T2 value for the intravascular space (ms). By default no T2IV is applied.
+    T1EV: Optional[float]
+        T1 value for the extravascular space (ms). By default no T1EV is applied.
+    T1IV: Optional[float]
+        T1 value for the intravascular space (ms). By default no T1IV is applied.
     """
 
     def __init__(
@@ -25,7 +33,11 @@ class Sequence:
         sample_shape: Union[int, Tuple[int, ...]],
         pulse_time_indices: List[int],
         pulse_angles: List[float],
-        pulse_axes: List[List[float]]
+        pulse_axes: List[List[float]],
+        T2EV: Optional[float]=None,
+        T2IV: Optional[float]=None,
+        T1EV: Optional[float]=None,
+        T1IV: Optional[float]=None,
     ):      
         self._curr_step = 0
         self._curr_pulse = 0
@@ -50,6 +62,11 @@ class Sequence:
         self.Mx = np.zeros(sample_shape)
         self.My = np.zeros(sample_shape)
         self.Mz = np.ones(sample_shape)
+
+        self.T2EV = T2EV
+        self.T2IV = T2IV
+        self.T1EV = T1EV
+        self.T1IV = T1IV
 
         self.signal = 0 + 0j
         self.EV_signal = 0 + 0j
@@ -77,7 +94,8 @@ class Sequence:
     def step(
         self,
         phase: np.ndarray,
-        is_IV: np.ndarray
+        is_IV: np.ndarray,
+        dt: Optional[float]=None
     ):
         """Advance the sequence by 1 step.
 
@@ -87,7 +105,12 @@ class Sequence:
             Array of dephasing samples.
         is_IV : np.ndarray
             Array indicating whether each phase sample is intravascular or extravascular.
+        dt : Optional[float]
+            Length of time step (ms). Only required when T2EV, T2IV, T1EV or T1IV are set. This should be the same `dt` as used to generate `phase`.
         """
+        # we do not need dt unless we have T1 or T2 values
+        if dt is None and not (self.T2EV is None and self.T2IV is None and self.T1EV is None and self.T1IV is None):
+            raise Exception('Variable `dt` is required when setting T1 or T2 in the Sequence.')
 
         # apply inital pulse to the spins
         if self._curr_step in self.pulse_time_indices:
@@ -96,6 +119,21 @@ class Sequence:
 
         self._apply_dephasing(phase)
         self._curr_step += 1
+
+        if self.T2EV is not None:
+            E2 = np.exp(-dt/self.T2EV)
+            self.Mx[np.logical_not(is_IV)] *= E2
+            self.My[np.logical_not(is_IV)] *= E2
+        if self.T2IV is not None:
+            E2 = np.exp(-dt/self.T2IV)
+            self.Mx[is_IV] *= E2
+            self.My[is_IV] *= E2
+        if self.T1EV is not None:
+            E1 = np.exp(-dt/self.T1EV)
+            self.Mz[np.logical_not(is_IV)] = self.Mz[np.logical_not(is_IV)]*E1+(1-E1)
+        if self.T1IV is not None:
+            E2 = np.exp(-dt/self.T1IV)
+            self.Mz[is_IV] = self.Mz[is_IV]*E1+(1-E1)
 
         # calculating the transverse magnetization using the complex notation
         Mxy = self.Mx + 1j * self.My
@@ -164,7 +202,7 @@ class SpinSequence(Sequence):
     spins : BOLDspins.Spins
         Spins object on which the dephasing samples will be taken.
     pulse_time_indices : List[int]
-        List of the number of times steps before each pulse is applied. For example, if it is `[0, 5, 10]`, and each step is 0.2ms, the pulses will be applied at the 0st, 10th and 20th time step, or at t=0ms, 2ms and 4ms. The pulses are always applied before dephasing is applied.
+        List of the number of times steps before each pulse is applied. For example, if it is `[0, 10, 20]`, and each step is 0.2ms, the pulses will be applied at the 0st, 10th and 20th time step, or at t=0ms, 2ms and 4ms. The pulses are always applied before dephasing is applied.
     pulse_angles : List[float]
         List of angle of each pulse (radians). Must be the same length as `pulse_time_indices`
     pulse_axes : List[List[float]]
@@ -176,15 +214,23 @@ class SpinSequence(Sequence):
         spins: BOLDspins.Spins,
         pulse_time_indices: List[int],
         pulse_angles: List[float],
-        pulse_axes: List[List[float]]
-    ): 
+        pulse_axes: List[List[float]],
+        T2EV: Optional[float]=None,
+        T2IV: Optional[float]=None,
+        T1EV: Optional[float]=None,
+        T1IV: Optional[float]=None,
+    ):
         self.spins = spins
 
         super().__init__(
             sample_shape=spins.num_spins,
             pulse_time_indices=pulse_time_indices,
             pulse_angles=pulse_angles,
-            pulse_axes=pulse_axes                
+            pulse_axes=pulse_axes,
+            T2EV=T2EV,
+            T2IV=T2IV,
+            T1EV=T1EV,
+            T1IV=T1IV
         )
 
     def step(
@@ -203,7 +249,8 @@ class SpinSequence(Sequence):
         phase, vessel_index, dt = self.spins.get_phase_vessel_indices_dt()
         super().step(
             phase=phase, 
-            is_IV=vessel_index != 0
+            is_IV=vessel_index != 0,
+            dt=dt
         )
 
     def walk(
@@ -235,9 +282,11 @@ class SpinSequence(Sequence):
         if self._curr_step != 0:
             warnings.warn('The walk is not on the 0th step of the sequence!')
 
-        eviv = np.zeros(num_steps) 
-        ev = np.zeros(num_steps)
-        iv = np.zeros(num_steps)
+        dtype = float if not cplx else complex
+
+        eviv = np.zeros(num_steps, dtype=dtype) 
+        ev = np.zeros(num_steps, dtype=dtype)
+        iv = np.zeros(num_steps, dtype=dtype)
 
         text = 'Walking Through'
         for j in tqdm(range(num_steps), desc=text, disable=not progressbar):

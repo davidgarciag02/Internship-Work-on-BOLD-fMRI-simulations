@@ -1,8 +1,8 @@
 #Importing relevant packages
-from BOLDswimsuite import BOLDgeometry, BOLDdeterministic
+from BOLDswimsuite import BOLDgeometry, BOLDsequence, BOLDspins
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm
+import pickle
 
 def main():
 
@@ -11,12 +11,12 @@ def main():
 
     size = BOLDgeometry.size_from_k(
         diameter=vessel_diameter, 
-        k=40,
+        k=20,
         ADC=0.001,
         dt=0.2
     )
     
-    continuous_voxel = BOLDgeometry.ContinuousVoxel2D.from_random(
+    voxel1 = BOLDgeometry.ContinuousVoxel2D.from_random(
         size=size,
         CBV=0.02,
         B0=3,
@@ -30,33 +30,38 @@ def main():
         seed=1,
         progressbar=True
     )
+    print(voxel1)
 
-    discrete_voxel = BOLDgeometry.DiscreteVoxel2D.from_continuous_analytical(
-        N=200,
-        voxel=continuous_voxel
-    )
+    filepath = r'2d_continuous_voxel1.pkl'
+
+    voxel1.save(filepath)
+
+    voxel = BOLDgeometry.ContinuousVoxel2D.load(filepath)
+
         
-    dd2d = BOLDdeterministic.DeterministicDiffuser2D(
-        geometry=discrete_voxel,
+    spins = BOLDspins.Spins2D(
+        ADC=0.001,
+        num_spins=10_000,
+        geometry=voxel,
+        dt=0.2,
+        IV=True,
+        seed=1
+    )
+
+    sequence = BOLDsequence.SpinSequence(
+        spins=spins,
         pulse_time_indices=[0, 175],
         pulse_angles=[np.pi/2, np.pi],
-        pulse_axes=[[np.pi/2, np.pi/2], [np.pi/2, 0]],    
-        ADC=0.001,
-        dt=0.2,
-        kernel_type='ModifiedBessel',
-        permeable_vessels=False
+        pulse_axes=['y', 'x']      
     )
 
-    eviv, ev, iv = dd2d.walk(
+    eviv, ev, iv = sequence.walk(
         dt=0.2,
         num_steps=nsteps,
         progressbar=True
     )
 
-    time_range = np.arange(0, nsteps * dd2d.dt, dd2d.dt)
-
-    #printing number of vessels
-    print('Number of vessels:', len(continuous_voxel.vessels))
+    time_range = np.arange(0, nsteps * spins.dt, spins.dt)
 
     #plotting
     f, (ax1,ax2,ax3) = plt.subplots(nrows=1, ncols=3, figsize=(15,5))

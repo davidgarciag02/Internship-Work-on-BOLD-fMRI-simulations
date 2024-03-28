@@ -15,7 +15,7 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
     geometry : BOLDgeometry.DiscreteVoxel2D
         2D discrete voxel to apply the deterministic diffusion to. Note that the vessel permeabilities defined in this object are superseded by the `permeable_vessels` parameter.
     pulse_time_indices : List[int]
-        List of the number of times steps before each pulse is applied. For example, if it is `[0, 5, 10]`, and each step is 0.2ms, the pulses will be applied at the 0st, 10th and 20th time step, or at t=0ms, 2ms and 4ms. The pulses are always applied before dephasing is applied.
+        List of the number of times steps before each pulse is applied. For example, if it is `[0, 10, 20]`, and each step is 0.2ms, the pulses will be applied at the 0st, 10th and 20th time step, or at t=0ms, 2ms and 4ms. The pulses are always applied before dephasing is applied.
     pulse_angles : List[float]
         List of angle of each pulse (radians). Must be the same length as `pulse_time_indices`
     pulse_axes : List[List[float]]
@@ -24,6 +24,14 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         Apparent diffusion coefficient (mm^2/s).
     dt : float
         Time step length for the inital phase calculation (ms).
+    T2EV: Optional[float]
+        T2 value for the extravascular space (ms). By default no T2EV is applied.
+    T2IV: Optional[float]
+        T2 value for the intravascular space (ms). By default no T2IV is applied.
+    T1EV: Optional[float]
+        T1 value for the extravascular space (ms). By default no T1EV is applied.
+    T1IV: Optional[float]
+        T1 value for the intravascular space (ms). By default no T1IV is applied.
     kernel_type : Literal['ModifiedBessel', 'Gaussian']
         The type of convolution kernel to use. Default is 'ModifiedBessel'.
     permeable_vessels : bool
@@ -38,6 +46,10 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         pulse_axes: List[List[float]],
         ADC: float,
         dt: float,
+        T2EV: Optional[float]=None,
+        T2IV: Optional[float]=None,
+        T1EV: Optional[float]=None,
+        T1IV: Optional[float]=None,
         kernel_type: Literal['ModifiedBessel', 'Gaussian']='ModifiedBessel',
         permeable_vessels: bool=False
     ):     
@@ -53,7 +65,11 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
             sample_shape=geometry.dBz_grid.shape,
             pulse_time_indices=pulse_time_indices,
             pulse_angles=pulse_angles,
-            pulse_axes=pulse_axes                
+            pulse_axes=pulse_axes,
+            T2EV=T2EV,
+            T2IV=T2IV,
+            T1EV=T1EV,
+            T1IV=T1IV           
         )
 
     def step(
@@ -70,6 +86,7 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         
         dt = self.dt if dt is None else dt
 
+        # if the time step length is changed, the kernel has to be remade
         if dt != self.dt:
             self.dt=dt
             self.kernel = self._make_kernel()
@@ -93,6 +110,21 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
             self.Mx, self.My = self._unrestricted_diffusion_convolution(self.Mx, self.My, self.kernel, self.kernel_type) 
         else:
             self.Mx, self.My = self._restricted_diffusion_convolution(self.Mx, self.My, is_IV, not_is_IV, self.kernel, self.kernel_type) 
+
+        if self.T2EV is not None:
+            E2 = np.exp(-dt/self.T2EV)
+            self.Mx[np.logical_not(is_IV)] *= E2
+            self.My[np.logical_not(is_IV)] *= E2
+        if self.T2IV is not None:
+            E2 = np.exp(-dt/self.T2IV)
+            self.Mx[is_IV] *= E2
+            self.My[is_IV] *= E2
+        if self.T1EV is not None:
+            E1 = np.exp(-dt/self.T1EV)
+            self.Mz[np.logical_not(is_IV)] = self.Mz[np.logical_not(is_IV)]*E1+(1-E1)
+        if self.T1IV is not None:
+            E2 = np.exp(-dt/self.T1IV)
+            self.Mz[is_IV] = self.Mz[is_IV]*E1+(1-E1)
 
         # calculating the transverse magnetization using the complex notation
         Mxy = self.Mx + 1j * self.My
@@ -155,11 +187,9 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
 
         sigma_sq = self.ADC*2*self.dt*0.001
 
-        grid_range = np.linspace(-self.geometry.size/2, self.geometry.size/2, self.geometry.N)
-
-        X, Y = np.meshgrid(grid_range, grid_range)
-
         if self.kernel_type == 'Gaussian':
+            grid_range = np.linspace(-self.geometry.size/2, self.geometry.size/2, self.geometry.N)
+            X, Y = np.meshgrid(grid_range, grid_range)
             kernel = np.exp(-((X ** 2 +  Y ** 2) / (2 * sigma_sq)))
             kernel /= np.sum(kernel)
         
@@ -170,6 +200,13 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
             kernel_range = np.abs(np.arange(-Nhw, Nhw+1))
             kernel = np.exp(-(sigma/dx)**2)*sp.special.iv(kernel_range, (sigma/dx)**2)   
         
+            kernel_size = len(kernel)
+            if kernel_size < 5:
+                warnings.warn(f'Diffusion kernel size is very small (size={kernel_size}). This will likely introduce significant error in the diffusion! Fix by increasing spatial resolution of the voxel (N).')
+
+            else:
+                tqdm.write(f'Diffuson kernel size: {kernel_size}')
+
         return kernel
     
     @staticmethod

@@ -2,7 +2,6 @@
 from BOLDswimsuite import BOLDgeometry, BOLDsequence, BOLDspins
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm
 
 def main():
 
@@ -30,6 +29,10 @@ def main():
         seed=1,
         progressbar=True
     )
+    
+    print(voxel)
+
+    voxel.show() 
         
     spins = BOLDspins.Spins2D(
         ADC=0.001,
@@ -54,9 +57,6 @@ def main():
     )
 
     time_range = np.arange(0, nsteps * spins.dt, spins.dt)
-
-    #printing number of vessels
-    print('Number of vessels:', len(voxel.vessels))
 
     #plotting
     f, (ax1,ax2,ax3) = plt.subplots(nrows=1, ncols=3, figsize=(15,5))

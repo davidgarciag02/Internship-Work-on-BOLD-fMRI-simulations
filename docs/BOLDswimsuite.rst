@@ -8,7 +8,7 @@ BOLDswimsuite.BOLDvessel module
 -------------------------------
 
 .. automodule:: BOLDswimsuite.BOLDvessel
-   :members:
+   :members: InfiniteCylinder3D, InfiniteCylinder2D, Sphere3D, Sphere2D
    :undoc-members:
    :show-inheritance:
 
@@ -16,23 +16,23 @@ BOLDswimsuite.BOLDgeometry module
 ---------------------------------
 
 .. automodule:: BOLDswimsuite.BOLDgeometry
-   :members:
-   :undoc-members:
+   :members: ContinuousVoxel3D, ContinuousVoxel2D, DiscreteVoxel3D, DiscreteVoxel2D
+   :inherited-members:
    :show-inheritance:
 
 BOLDswimsuite.BOLDspins module
 ------------------------------
 
 .. automodule:: BOLDswimsuite.BOLDspins
-   :members:
-   :undoc-members:
+   :members: Spins3D, Spins2D
+   :inherited-members:
    :show-inheritance:
 
 BOLDswimsuite.BOLDsequence module
 ---------------------------------
 
 .. automodule:: BOLDswimsuite.BOLDsequence
-   :members:
+   :members: Sequence, SpinSequence
    :undoc-members:
    :show-inheritance:
 
@@ -40,7 +40,7 @@ BOLDswimsuite.BOLDdeterministic module
 --------------------------------------
 
 .. automodule:: BOLDswimsuite.BOLDdeterministic
-   :members:
+   :members: DeterministicDiffuser2D
    :undoc-members:
    :show-inheritance:
 

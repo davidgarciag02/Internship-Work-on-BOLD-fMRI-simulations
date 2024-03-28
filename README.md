@@ -43,6 +43,7 @@ Execute the following command:
 poetry install --with analysis
 ``` 
 This will install all the dependencies required and create the virtual environment. The `--with analysis` portion includes the optional dependencies to run the lessons, generate plots and package results.
+> Note: Whenever a different version or branch of the package is used, it is important to run this command again, as the dependencies may change.
 
 To test if everything installed properly, from the same directory in the command line, execute the following: 
 

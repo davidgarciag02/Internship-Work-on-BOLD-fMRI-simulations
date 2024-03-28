@@ -4,7 +4,10 @@ import os
 from scipy import fft, io
 from typing import  List, Dict, Optional, Tuple, Union, Literal
 from tqdm import tqdm
-from . import BOLDvessel
+from mayavi import mlab
+import matplotlib.pyplot as plt
+import pickle
+from . import BOLDvessel, BOLDdisplay
 
 def size_from_k(diameter: float, k: float, ADC: float, dt: float) -> float:
     
@@ -12,10 +15,7 @@ def size_from_k(diameter: float, k: float, ADC: float, dt: float) -> float:
     
     return 2 * (A + k * diameter / 2)
 
-class Geometry:
-    
-    def __init__(self, ndims: int):
-        self._ndims = ndims
+class Voxel:
 
     def vessel_indices_from_positions(self, positions: np.ndarray) -> np.ndarray:
         """Given an array of positions, returns the vessel index of each position.
@@ -90,7 +90,7 @@ class Geometry:
         pass
 
     def _validate_positions(self, positions: np.ndarray) -> None:
-        """Validates the `position` argument for other functions in `Geometry`.
+        """Validates the `position` argument for other functions in `Voxel`.
 
         Parameters
         ----------
@@ -105,9 +105,9 @@ class Geometry:
 
         if len(positions.shape) == 2 and positions.shape[1] == self._ndims and issubclass(positions.dtype.type, np.floating):
             return
-        raise Exception(f'\'positions\' must be a Numpy floating point array or shape (N, {self._ndims})')
+        raise Exception(f'\'positions\' must be a Numpy floating point array of shape (N, {self._ndims})')
 
-class ContinuousVoxel(Geometry):
+class ContinuousVoxel(Voxel):
     
     def __init__(
         self,
@@ -117,7 +117,7 @@ class ContinuousVoxel(Geometry):
         vessels: Optional[Union[List[BOLDvessel.Vessel3D], List[BOLDvessel.Vessel2D]]]=None
     ):
         self.vessels = vessels if vessels is not None else []
-        self.size: float = size
+        self.size = size
         self.B0 = B0
         self._ndims = ndims
     
@@ -230,13 +230,14 @@ class ContinuousVoxel3D(ContinuousVoxel):
     @classmethod
     def from_random(
         cls,
-        size: float,
         CBV: float,
         B0: float,
         labels: List[str],
         weights: Dict[str, float],
         diameter_distributions: Dict[str, List[float]],
         dchis: Dict[str, float],
+        size: Optional[float]=None,
+        num_vessels: Optional[int]=None,
         permeation_probabilities: Optional[Dict[str, float]]=None,
         vessel_type: Literal['cylinder', 'sphere']='cylinder',
         allow_vessel_intersection: bool = True,
@@ -247,8 +248,6 @@ class ContinuousVoxel3D(ContinuousVoxel):
 
         Parameters
         ----------
-        size : float
-            Side length of the voxel (mm). Voxels are isometric.
         CBV : float
             Target cerebral blood volume (CBV). Vessels will be added until the estimated CBV reaches the target CBV (the vessel that causes the estimated CBV to surpass the target CBV is included).
         B0 : float
@@ -261,9 +260,13 @@ class ContinuousVoxel3D(ContinuousVoxel):
             Dictionary with each group label (keys) and a list of diameters of each group (values). The generated vessel diameters are uniformly sampled from the list.
         dchis : Dict[str, float]
             Dictionary with each group label (keys) and the magnetic susceptibility difference of each group (values). The magnetic susceptibility difference is between the vessel's intravascular compartment and the extravascular space. The magnetic susceptibility units are in cgs.
+        size : Optional[float], optional
+            Side length of the voxel (mm). Voxels are isometric. Do not set if `num_vessels` is set.
+        num_vessels : Optional[int], optional
+            Number of vessels to generate. This will approximate the voxel size required to obtain the given number of vessels. Due to random generation of vessels, the resulting voxel will not have exactly the input number of vessels. Do not set if `size` is set.
         permeation_probabilities : Optional[Dict[str, float]], optional
             Dictionary with each group label (keys) and the permeation probability of each group (values). The permeation probability applies only to Monte Carlo simulations. Any spins diffusing across the vessel wall during a Monte Carlo step will have this probability of permeating through. The default value will set all probabilities to 0, making the vessels impermeable.
-        vessel_type : str, optional
+        vessel_type : Literal['cylinder', 'sphere'], optional
             Type of vessel to generate. 'cylinder' will generate `BOLDvessel.InfiniteCylinder3D` and 'sphere' will generate spheres `BOLDvessel.Sphere3D`. Default is 'cylinder'.
         allow_vessel_intersection : bool, optional
             When generating the vessels, whether to allow them to intersect. Setting to False in voxels with InfiniteCylinder3D vessels creates a voxel with non-uniform CBV. The default is True.
@@ -277,13 +280,10 @@ class ContinuousVoxel3D(ContinuousVoxel):
         ContinuousVoxel3D
             3D continuous voxel.
         """
+        if (num_vessels is None and size is None) or (num_vessels is not None and size is not None):
+            raise Exception('Must define either `size` or `num_vessels` (not both)!')
 
         rng = np.random.default_rng(seed)
-
-        voxel = cls(
-            size=size,
-            B0=B0
-        )
 
         str2vessel_class = {
             'cylinder': BOLDvessel.InfiniteCylinder3D,
@@ -299,13 +299,30 @@ class ContinuousVoxel3D(ContinuousVoxel):
         for label in labels:
             total_weight += weights[label]
 
+        type_CBVs = {label: CBV * weights[label] / total_weight for label in labels}
+
+        # calculating size if num_vessel is provided
+        if num_vessels is not None:
+            CBVs = np.array([type_CBVs[label] for label in labels])
+            average_diameters = np.array([np.mean(diameter_distributions[label]) for label in labels])
+            
+            if vessel_type == 'cylinder':
+                size = np.sqrt(num_vessels/np.sum(3*CBVs/average_diameters**2))
+            elif vessel_type == 'sphere':
+                size = (np.pi*num_vessels/(6*np.sum(CBVs/average_diameters**3)))**(1/3)
+
+        voxel = cls(
+            size=size,
+            B0=B0
+        )
+
         text = 'Populating Voxel'
         with tqdm(total=100, desc=text, disable=not progressbar) as pbar:
 
             # iterating through all vessel types
             for label in labels:
                 # CBV occupied by the current vessel type
-                type_CBV = CBV * weights[label] / total_weight
+                type_CBV = type_CBVs[label]
                 # target CBV incremented by the vessel type's CBV
                 total_CBV += type_CBV
 
@@ -359,6 +376,139 @@ class ContinuousVoxel3D(ContinuousVoxel):
                     pbar.refresh()
 
         return voxel
+
+    def show(self, azimuth: float=50, elevation: float=60, distance: Optional[float]=None):
+        """Open a Mayavi window, showing a visual representation of the voxel.
+
+        Parameters
+        ----------
+        azimuth : float, 
+            Azimuth angle of the camera (deg), by default 50
+        elevation : float, optional
+            Elevation angle of the camera (deg), by default 60
+        distance : Optional[float], optional
+            Distance between the center of the voxel and the camera. By default None, which sets the distance to 5 times the voxel size.
+        """
+        
+        sphere_vessels = []
+        size = self.size
+
+        distance = distance if distance is not None else 5*size
+
+        for vessel in self.vessels:
+            
+            if isinstance(vessel, BOLDvessel.InfiniteCylinder3DNumba):
+                BOLDdisplay.mlab_plot_infinite_cylinder_3d(vessel, size)
+            
+            if isinstance(vessel, BOLDvessel.Sphere3DNumba):
+                sphere_vessels.append(vessel)
+
+        if len(sphere_vessels) > 0: 
+            BOLDdisplay.mlab_plot_sphere_3d_list(sphere_vessels)        
+
+        mlab.outline(color=(0, 0, 0), line_width=5, extent=[-size/2, size/2, -size/2, size/2, -size/2, size/2])
+        mlab.view(
+            azimuth=azimuth,
+            elevation=elevation,
+            distance=distance,
+            focalpoint=np.array([0, 0, 0], dtype=float)
+        )
+        mlab.show()
+
+    def to_dict(self) -> dict:
+        """Returns a dictionnary representation of the voxel.
+        """
+        vessels_tuple = []
+        for vessel in self.vessels:
+            vessel_tuple = vessel.to_tuple()
+            if isinstance(vessel, BOLDvessel.InfiniteCylinder3DNumba):
+                vessel_type = 'InfiniteCylinder3D'
+            elif isinstance(vessel, BOLDvessel.Sphere3DNumba):
+                vessel_type = 'Sphere3D' 
+            else:
+                raise Exception(f'{type(vessel)} is not supported for saving!') 
+            vessel_tuple = (vessel_type, *vessel_tuple)     
+
+            vessels_tuple.append(vessel_tuple) 
+
+        return {
+            'voxel_type': 'ContinuousVoxel3D',
+            'vessels_tuple': vessels_tuple,
+            'size': self.size,
+            'B0': self.B0
+        }
+    
+    def save(self, filepath: str):
+        """Save the voxel to a pickle file (.pkl). Can be loaded later using the `load` class method.
+
+        Parameters
+        ----------
+        filepath : str
+            File path and name to the save location.
+        """
+        with open(filepath, 'wb') as f:
+            pickle.dump(self.to_dict(), f, pickle.HIGHEST_PROTOCOL)
+
+    @classmethod
+    def load(cls, filepath: str):
+        """Load a voxel from a pickle file (.pkl).
+
+        Parameters
+        ----------
+        filepath : str
+            Path and name to the file location.
+        """
+        with open(filepath, 'rb') as f:
+            voxel_dict = pickle.load(f)
+
+        voxel_type = voxel_dict['voxel_type']
+        if voxel_type != 'ContinuousVoxel3D':
+            raise Exception(f'Expected voxel type \'ContinuousVoxel3D\' but got \'{voxel_type}\'!')
+
+        vessels = []
+        for vessel_tuple in voxel_dict['vessels_tuple']:
+            if vessel_tuple[0] == 'InfiniteCylinder3D':
+                vessels.append(
+                    BOLDvessel.InfiniteCylinder3D.from_tuple(vessel_tuple[1:])
+                )
+            elif vessel_tuple[0] == 'Sphere3D':
+                vessels.append(
+                    BOLDvessel.Sphere3D.from_tuple(vessel_tuple[1:])
+                )
+            else:
+                raise Exception('Encountered unknown vessel type when loading voxel!')
+        
+        return cls(
+            size=voxel_dict['size'],
+            B0=voxel_dict['B0'],
+            vessels=vessels
+        )
+    
+    def __repr__(self):
+        n_infinite_cylinder_3d = 0
+        n_sphere_3d = 0
+        n_unknown = 0
+        
+        repr_str = f'ContinuousVoxel3D( size={self.size}, B0={self.B0}'
+
+        for vessel in self.vessels:
+            if isinstance(vessel, BOLDvessel.InfiniteCylinder3DNumba):
+                n_infinite_cylinder_3d += 1
+            elif isinstance(vessel, BOLDvessel.Sphere3DNumba):
+                n_sphere_3d += 1
+            else:
+                n_unknown += 1
+        
+        if n_infinite_cylinder_3d > 0:
+            repr_str += f', {n_infinite_cylinder_3d} InfiniteCylinder3D'
+        if n_sphere_3d > 0:
+            repr_str += f', {n_sphere_3d} Sphere3D'     
+        if n_unknown > 0:
+            repr_str += f', {n_unknown} unknown'
+        
+        repr_str += ' )'
+
+        return repr_str
 
 class ContinuousVoxel2D(ContinuousVoxel):
     """Continuous space 2 dimensional voxel.
@@ -417,7 +567,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
         diameter_distributions: Dict[str, List[float]],
         dchis: Dict[str, float],
         permeation_probabilities: Optional[Dict[str, float]]=None,
-        vessel_type: Literal['cylinder']='cylinder',
+        vessel_type: Literal['cylinder', 'sphere']='cylinder',
         allow_vessel_intersection: bool = True,
         seed: Optional[int]=None,
         progressbar: bool=True
@@ -443,7 +593,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
         permeation_probabilities : Optional[Dict[str, float]], optional
             Dictionary with each group label (keys) and the permeation probability of each group (values). The permeation probability applies only to Monte Carlo simulations. Any spins diffusing across the vessel wall during a Monte Carlo step will have this probability of permeating through. The default value will set all probabilities to 0, making the vessels impermeable.
         vessel_type : str, optional
-            Type of vessel to generate. 'cylinder' will generate `BOLDvessel.InfiniteCylinder2D`. Default is 'cylinder'.
+            Type of vessel to generate. 'cylinder' will generate `BOLDvessel.InfiniteCylinder2D`. 'sphere' will generate `BOLDvessel.Sphere2D`. Default is 'cylinder'.
         allow_vessel_intersection : bool, optional
             When generating the vessels, whether to allow them to intersect. Setting to False in voxels with InfiniteCylinder3D vessels creates a voxel with non-uniform CBV. The default is True.
         seed : Optional[int], optional
@@ -466,6 +616,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
 
         str2vessel_class = {
             'cylinder': BOLDvessel.InfiniteCylinder2D,
+            'sphere': BOLDvessel.Sphere2D
         }
 
         vessel_class = str2vessel_class[vessel_type]
@@ -536,8 +687,109 @@ class ContinuousVoxel2D(ContinuousVoxel):
                     pbar.refresh()
         
         return voxel
+    
+    def show(self):
+        """Open a Matplotlib window, showing a visual representation of the voxel.
+        """
 
-class DiscreteVoxel(Geometry):
+        BOLDdisplay.matplotlib_plot_infinite_cylinder_or_sphere_2d_list(self.vessels)
+
+        plt.gca().set_aspect('equal')
+        plt.ylim([-self.size/2, self.size/2])
+        plt.xlim([-self.size/2, self.size/2])
+        plt.show()
+
+    def to_dict(self):
+
+        vessels_tuple = []
+        for vessel in self.vessels:
+            vessel_tuple = vessel.to_tuple()
+            if isinstance(vessel, BOLDvessel.InfiniteCylinder2DNumba):
+                vessel_type = 'InfiniteCylinder2D'
+            elif isinstance(vessel, BOLDvessel.Sphere2DNumba):
+                vessel_type = 'Sphere2D' 
+            else:
+                raise Exception(f'{type(vessel)} is not supported for saving!') 
+            vessel_tuple = (vessel_type, *vessel_tuple)     
+
+            vessels_tuple.append(vessel_tuple) 
+
+        return {
+            'voxel_type': 'ContinuousVoxel2D',
+            'vessels_tuple': vessels_tuple,
+            'size': self.size,
+            'B0': self.B0
+        }
+    
+    def save(self, filepath: str):
+        """Save the voxel to a pickle file (.pkl). Can be loaded later using the `load` class method.
+
+        Parameters
+        ----------
+        filepath : str
+            File path and name to the save location.
+        """
+        with open(filepath, 'wb') as f:
+            pickle.dump(self.to_dict(), f, pickle.HIGHEST_PROTOCOL)
+
+    @classmethod
+    def load(cls, filepath: str):
+        """Load a voxel from a pickle file (.pkl).
+
+        Parameters
+        ----------
+        filepath : str
+            Path and name to the file location.
+        """        
+        with open(filepath, 'rb') as f:
+            voxel_dict = pickle.load(f)
+
+        voxel_type = voxel_dict['voxel_type']
+        if voxel_type != 'ContinuousVoxel2D':
+            raise Exception(f'Expected voxel type \'ContinuousVoxel2D\' but got \'{voxel_type}\'!')
+
+        vessels = []
+        for vessel_tuple in voxel_dict['vessels_tuple']:
+            if vessel_tuple[0] == 'InfiniteCylinder2D':
+                vessels.append(
+                    BOLDvessel.InfiniteCylinder2D.from_tuple(vessel_tuple[1:])
+                )
+            else:
+                raise Exception('Encountered unknown vessel type when loading voxel!')
+        
+        return cls(
+            size=voxel_dict['size'],
+            B0=voxel_dict['B0'],
+            vessels=vessels
+        )
+    
+    def __repr__(self):
+        n_infinite_cylinder_2d = 0
+        n_sphere_2d = 0
+        n_unknown = 0
+        
+        repr_str = f'ContinuousVoxel2D( size={self.size}, B0={self.B0}'
+
+        for vessel in self.vessels:
+            if isinstance(vessel, BOLDvessel.InfiniteCylinder2DNumba):
+                n_infinite_cylinder_2d += 1
+            elif isinstance(vessel, BOLDvessel.Sphere2DNumba):
+                n_sphere_2d += 1
+            else:
+                n_unknown += 1
+        
+        if n_infinite_cylinder_2d > 0:
+            repr_str += f', {n_infinite_cylinder_2d} InfiniteCylinder2D'
+        if n_sphere_2d > 0:
+            repr_str += f', {n_sphere_2d} Sphere2D'
+        if n_unknown > 0:
+            repr_str += f', {n_unknown} unknown'
+        
+        repr_str += ' )'
+
+        return repr_str
+
+class DiscreteVoxel(Voxel):
 
     def __init__(
         self,
@@ -730,9 +982,9 @@ class DiscreteVoxel3D(DiscreteVoxel):
         permeation_probability_list = [vsl.permeation_probability for vsl in voxel.vessels]
 
         if extend:
-            dBz_grid = cls.dchi_mask_to_dBz_FFT(grid_dchi, 0, voxel.B0)
+            dBz_grid = cls._dchi_mask_to_dBz_FFT(grid_dchi, 0, voxel.B0)
         else:
-            dBz_grid = cls.dchi_mask_to_dBz_FFT(grid_dchi, padding, voxel.B0)
+            dBz_grid = cls._dchi_mask_to_dBz_FFT(grid_dchi, padding, voxel.B0)
 
         if extend and padding > 0:
             vessel_index_grid = vessel_index_grid[padding:-padding,padding:-padding,padding:-padding]
@@ -782,7 +1034,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
         for i, dchi in enumerate(dchi_list):
             grid_dchi[grid_dchi == i+1] = dchi
         
-        dBz_grid = cls.dchi_mask_to_dBz_FFT(grid_dchi, padding, B0)
+        dBz_grid = cls._dchi_mask_to_dBz_FFT(grid_dchi, padding, B0)
 
         return cls(
             vessel_index_grid=vessel_index_grid.astype(int),
@@ -836,7 +1088,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
         else:
             raise Exception('`dchis` argument is neither a list nor a Numpy array.')
         
-        dBz_grid = cls.dchi_mask_to_dBz_FFT(grid_dchi, padding, B0)
+        dBz_grid = cls._dchi_mask_to_dBz_FFT(grid_dchi, padding, B0)
 
         return cls(
             vessel_index_grid=vessel_index_grid.astype(int),
@@ -846,7 +1098,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
         )
 
     @staticmethod
-    def dchi_mask_to_dBz_FFT(
+    def _dchi_mask_to_dBz_FFT(
         dchi_grid: np.ndarray,
         padding: int,
         B0: float
@@ -889,6 +1141,87 @@ class DiscreteVoxel3D(DiscreteVoxel):
             dBz = dBz_padded
 
         return dBz
+    
+    def show(self, show_dBz: bool=False, azimuth: float=50, elevation: float=60, distance: Optional[float]=None):
+        """Open a Mayavi window, showing a visual representation of the voxel.
+
+        Parameters
+        ----------
+        show_dBz : bool,
+            If True, shows isometric surfaces representing the magnetic field offset of the voxel. Otherwise, shows the vessel geometry. By default False.
+        azimuth : float, 
+            Azimuth angle of the camera (deg), by default 50
+        elevation : float, optional
+            Elevation angle of the camera (deg), by default 60
+        distance : Optional[float], optional
+            Distance between the center of the voxel and the camera. By default None, which sets the distance to 5 times the voxel size.
+        """
+
+        if show_dBz:
+            BOLDdisplay.mlab_plot_dBz_grid_3d(self.dBz_grid)
+        else:
+            BOLDdisplay.mlab_plot_is_IV_grid_3d((self.vessel_index_grid > 0).astype(float))
+        
+        distance = distance if distance is not None else 5*self.N
+
+        mlab.outline(color=(0, 0, 0), line_width=5, extent=[0, self.N, 0, self.N, 0, self.N])
+
+        halfN = int(self.N/2)
+
+        mlab.view(
+            azimuth=azimuth,
+            elevation=elevation,
+            distance=distance,
+            focalpoint=np.array([halfN, halfN, halfN], dtype=float)
+        )
+
+        mlab.show()
+
+    def save(self, filepath: str, compress: bool=True):
+        """Save the voxel to a numpy file (.npz). Can be loaded later using the `load` class method.
+
+        Parameters
+        ----------
+        filepath : str
+            File path and name to the save location.
+        compress : bool
+            If True, compresses the file. Default is True.
+        """
+
+        if compress:
+            np.savez_compressed(
+                filepath,
+                vessel_index_grid = self.vessel_index_grid,
+                dBz_grid = self.dBz_grid,
+                size=self.size,
+                permeation_probability_array = np.array(self.permeation_probability_list)
+            )
+        else:
+            np.savez(
+                filepath,
+                vessel_index_grid = self.vessel_index_grid,
+                dBz_grid = self.dBz_grid,
+                size=self.size,
+                permeation_probability_array = np.array(self.permeation_probability_list)
+            )
+
+    @classmethod
+    def load(cls, filepath: str):
+        """Load a voxel from a numpy file (.npz).
+
+        Parameters
+        ----------
+        filepath : str
+            Path and name to the file location.
+        """
+        voxel_data = np.load(filepath)
+
+        return cls(
+            vessel_index_grid=voxel_data['vessel_index_grid'],
+            dBz_grid=voxel_data['dBz_grid'],
+            permeation_probability_list=list(voxel_data['permeation_probability_array']),
+            size=voxel_data['size']
+        )
 
 class DiscreteVoxel2D(DiscreteVoxel):
     """Discrete space 2 dimensional voxel.
@@ -931,7 +1264,7 @@ class DiscreteVoxel2D(DiscreteVoxel):
         Parameters
         ----------
         N : int
-            The number of discrete points along the voxel edges. Therefore the output 3D discrete voxel is represented on an (N, N) grid.
+            The number of discrete points along the voxel edges. Therefore the output 2D discrete voxel is represented on an (N, N) grid.
         voxel : ContinuousVoxel2D
             2D continuous voxel object to convert to discrete space.
 
@@ -960,4 +1293,67 @@ class DiscreteVoxel2D(DiscreteVoxel):
             dBz_grid=dBz_grid,
             permeation_probability_list=permeation_probability_list,
             size=size
+        )
+
+    def show(self, show_dBz: bool=False):
+        """Open a Matplotlib window, showing a visual representation of the voxel.
+
+        Parameters
+        ----------
+        show_dBz : bool,
+            If True, shows the magnetic field offset of the voxel. Otherwise, shows the vessel geometry. By default False.
+        """
+
+        if show_dBz:
+            plt.imshow(self.dBz_grid.T, origin='lower', cmap='seismic')
+        else:
+            is_IV_grid = self.vessel_index_grid.T - 1.2*np.max(self.vessel_index_grid)*(self.vessel_index_grid.T>0)
+            plt.imshow(is_IV_grid, origin='lower', cmap='gnuplot2')
+        
+        plt.show()
+
+    def save(self, filepath: str, compress: bool=True):
+        """Save the voxel to a numpy file (.npz). Can be loaded later using the `load` class method.
+
+        Parameters
+        ----------
+        filepath : str
+            File path and name to the save location.
+        compress : bool
+            If True, compresses the file. Default is True.
+        """
+        if compress:
+            np.savez_compressed(
+                filepath,
+                vessel_index_grid = self.vessel_index_grid,
+                dBz_grid = self.dBz_grid,
+                size=self.size,
+                permeation_probability_array = np.array(self.permeation_probability_list)
+            )
+        else:
+            np.savez(
+                filepath,
+                vessel_index_grid = self.vessel_index_grid,
+                dBz_grid = self.dBz_grid,
+                size=self.size,
+                permeation_probability_array = np.array(self.permeation_probability_list)
+            )
+
+    @classmethod
+    def load(cls, filepath: str):
+        """Load a voxel from a numpy file (.npz).
+
+        Parameters
+        ----------
+        filepath : str
+            Path and name to the file location.
+        """
+        
+        voxel_data = np.load(filepath)
+
+        return cls(
+            vessel_index_grid=voxel_data['vessel_index_grid'],
+            dBz_grid=voxel_data['dBz_grid'],
+            permeation_probability_list=list(voxel_data['permeation_probability_array']),
+            size=voxel_data['size']
         )

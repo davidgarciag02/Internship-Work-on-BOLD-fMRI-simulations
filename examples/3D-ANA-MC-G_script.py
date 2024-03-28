@@ -2,27 +2,17 @@
 from BOLDswimsuite import BOLDgeometry, BOLDsequence, BOLDspins
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm
 
 def main():
-
-    vessel_diameter = 0.002
-    nsteps = 600
-
-    size = BOLDgeometry.size_from_k(
-        diameter=vessel_diameter, 
-        k=20,
-        ADC=0.001,
-        dt=0.2
-    )
+    num_steps = 600
     
     continuous_voxel = BOLDgeometry.ContinuousVoxel3D.from_random(
-        size=size,
+        num_vessels=50,
         CBV=0.02,
         B0=3,
         labels=['vesselGroup1'],
         weights={'vesselGroup1': 1},
-        diameter_distributions={'vesselGroup1': [vessel_diameter]},
+        diameter_distributions={'vesselGroup1': [0.002]},
         dchis={'vesselGroup1': 3e-8},
         permeation_probabilities={'vesselGroup1': 0},
         vessel_type='cylinder',
@@ -31,11 +21,15 @@ def main():
         progressbar=True
     )
 
+    print(continuous_voxel)
+
     discrete_voxel = BOLDgeometry.DiscreteVoxel3D.from_continuous_analytical(
         N=200,
         voxel=continuous_voxel
     )
-        
+
+    discrete_voxel.show(show_dBz=False)
+
     spins = BOLDspins.Spins3D(
         ADC=0.001,
         num_spins=10_000,
@@ -54,14 +48,11 @@ def main():
 
     eviv, ev, iv = sequence.walk(
         dt=0.2,
-        num_steps=nsteps,
+        num_steps=num_steps,
         progressbar=True
     )
 
-    time_range = np.arange(0, nsteps * spins.dt, spins.dt)
-
-    #printing number of vessels
-    print('Number of vessels:', len(continuous_voxel.vessels))
+    time_range = np.arange(0, num_steps * spins.dt, spins.dt)
 
     #plotting
     f, (ax1,ax2,ax3) = plt.subplots(nrows=1, ncols=3, figsize=(15,5))
