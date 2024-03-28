@@ -36,7 +36,7 @@ def main():
 
     voxel1.save(filepath)
 
-    voxel = BOLDgeometry.ContinuousVoxel3D.load(filepath)
+    voxel = BOLDgeometry.ContinuousVoxel2D.load(filepath)
 
         
     spins = BOLDspins.Spins2D(
