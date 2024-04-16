@@ -151,11 +151,9 @@ class Sequence:
         """Apply the next pulse in the pulse sequence to the magnetization arrays (Mx, My, Mz).
         """        
 
-        ax_theta = self.pulse_axes[self._curr_pulse][0],
-        ax_phi = self.pulse_axes[self._curr_pulse][1],
-        angle = self.pulse_angles[self._curr_pulse],
- 
-        # https://sites.google.com/site/glennmurray/Home/rotation-matrices-and-formulas/rotation-about-an-arbitrary-axis-in-3-dimensions
+        ax_theta = self.pulse_axes[self._curr_pulse][0]
+        ax_phi = self.pulse_axes[self._curr_pulse][1]
+        angle = self.pulse_angles[self._curr_pulse]
 
         x = np.array(self.Mx)
         y = np.array(self.My)
