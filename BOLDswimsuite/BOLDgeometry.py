@@ -559,15 +559,16 @@ class ContinuousVoxel2D(ContinuousVoxel):
     @classmethod
     def from_random(
         cls,
-        size: float,
         CBV: float,
         B0: float,
         labels: List[str],
         weights: Dict[str, float],
         diameter_distributions: Dict[str, List[float]],
         dchis: Dict[str, float],
+        size: Optional[float]=None,
+        num_vessels: Optional[int]=None,
         permeation_probabilities: Optional[Dict[str, float]]=None,
-        vessel_type: Literal['cylinder', 'sphere']='cylinder',
+        vessel_type: Literal['cylinder']='cylinder',
         allow_vessel_intersection: bool = True,
         seed: Optional[int]=None,
         progressbar: bool=True
@@ -576,8 +577,6 @@ class ContinuousVoxel2D(ContinuousVoxel):
 
         Parameters
         ----------
-        size : float
-            Side length of the voxel (mm). Voxels are isometric.
         CBV : float
             Target cerebral blood volume (CBV). Vessels will be added until the estimated CBV reaches the target CBV (the vessel that causes the estimated CBV to surpass the target CBV is included).
         B0 : float
@@ -590,10 +589,14 @@ class ContinuousVoxel2D(ContinuousVoxel):
             Dictionary with each group label (keys) and a list of diameters of each group (values). The generated vessel diameters are uniformly sampled from the list.
         dchis : Dict[str, float]
             Dictionary with each group label (keys) and the magnetic susceptibility difference of each group (values). The magnetic susceptibility difference is between the vessel's intravascular compartment and the extravascular space. The magnetic susceptibility units are in cgs.
+        size : float
+            Side length of the voxel (mm). Voxels are isometric. Do not set if `num_vessels` is set.
+        num_vessels : Optional[int], optional
+            Number of vessels to generate. This will approximate the voxel size required to obtain the given number of vessels. Due to random generation of vessels, the resulting voxel will not have exactly the input number of vessels. Do not set if `size` is set.
         permeation_probabilities : Optional[Dict[str, float]], optional
             Dictionary with each group label (keys) and the permeation probability of each group (values). The permeation probability applies only to Monte Carlo simulations. Any spins diffusing across the vessel wall during a Monte Carlo step will have this probability of permeating through. The default value will set all probabilities to 0, making the vessels impermeable.
-        vessel_type : str, optional
-            Type of vessel to generate. 'cylinder' will generate `BOLDvessel.InfiniteCylinder2D`. 'sphere' will generate `BOLDvessel.Sphere2D`. Default is 'cylinder'.
+        vessel_type : Literal['cylinder']='cylinder'
+            Type of vessel to generate. 'cylinder' will generate `BOLDvessel.InfiniteCylinder2D`. Default is 'cylinder'.
         allow_vessel_intersection : bool, optional
             When generating the vessels, whether to allow them to intersect. Setting to False in voxels with InfiniteCylinder3D vessels creates a voxel with non-uniform CBV. The default is True.
         seed : Optional[int], optional
@@ -607,16 +610,13 @@ class ContinuousVoxel2D(ContinuousVoxel):
             2D continuous voxel.
         """
 
-        rng = np.random.default_rng(seed)
+        if (num_vessels is None and size is None) or (num_vessels is not None and size is not None):
+            raise Exception('Must define either `size` or `num_vessels` (not both)!')
 
-        voxel = cls(
-            size=size,
-            B0=B0
-        )
+        rng = np.random.default_rng(seed)
 
         str2vessel_class = {
             'cylinder': BOLDvessel.InfiniteCylinder2D,
-            'sphere': BOLDvessel.Sphere2D
         }
 
         vessel_class = str2vessel_class[vessel_type]
@@ -628,12 +628,27 @@ class ContinuousVoxel2D(ContinuousVoxel):
         for label in labels:
             total_weight += weights[label]
 
+        type_CBVs = {label: CBV * weights[label] / total_weight for label in labels}
+
+        # calculating size if num_vessel is provided
+        if num_vessels is not None:
+            CBVs = np.array([type_CBVs[label] for label in labels])
+            average_diameters = np.array([np.mean(diameter_distributions[label]) for label in labels])
+            
+            if vessel_type == 'cylinder':
+                size = np.sqrt(np.pi*num_vessels/np.sum(CBVs/(average_diameters/2)**2))
+
+        voxel = cls(
+            size=size,
+            B0=B0
+        )
+
         text = 'Populating Voxel'
         with tqdm(total=100, desc=text, disable=not progressbar) as pbar:
              # iterating through all vessel types
             for label in labels:
                 # CBV occupied by the current vessel type
-                type_CBV = CBV * weights[label] / total_weight
+                type_CBV = type_CBVs[label]
                 # target CBV incremented by the vessel type's CBV
                 total_CBV += type_CBV
 

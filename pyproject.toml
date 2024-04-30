@@ -17,14 +17,11 @@ mayavi = "^4.8.1"
 matplotlib = "^3.6.0"
 pyside2 = "^5.15.2.1"
 
-[tool.poetry.group.analysis]
-optional = true
+ipykernel = { version = "^6.22.0", optional = true }
+jupyter = { version = "^1.0.0", optional = true }
 
-[tool.poetry.group.analysis.dependencies]
-SciencePlots = "^2.0.1"
-ipykernel = "^6.22.0"
-pandas = "^2.0.3"
-jupyter = "^1.0.0"
+[tool.poetry.extras]
+lessons = ["ipykernel", "jupyter"]
 
 [build-system]
 requires = ["poetry-core"]
