@@ -28,8 +28,16 @@ https://www.python.org/downloads/release/python-3104/
 
 ## 3. Installing Poetry
 
-Download Poetry 1.6.1 using the instructions at the following link:
+Install Poetry 1.6.1 using the instructions at the following link:
 https://python-poetry.org/docs/#installation 
+
+If you have multiple versions of python installed on your computer, you may need to change which version Poetry uses with:
+
+```
+poetry env use /full/path/to/python
+```
+
+(replacing the last part with the full path to the Python 3.10.4 executable)
 
 ## 4. Creating the Python Virtual Environment
 
