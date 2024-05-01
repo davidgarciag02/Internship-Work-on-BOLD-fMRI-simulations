@@ -37,7 +37,7 @@ If you have multiple versions of python installed on your computer, you may need
 poetry env use /full/path/to/python
 ```
 
-(replacing the last part with the full path to the Python 3.10.4 executable)
+(replacing the last part with the full path to the Python 3.10.4 executable). More detailed instructions: https://python-poetry.org/docs/managing-environments/#switching-between-environments.
 
 ## 4. Creating the Python Virtual Environment
 
