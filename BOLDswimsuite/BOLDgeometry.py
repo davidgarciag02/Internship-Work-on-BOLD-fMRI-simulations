@@ -1336,6 +1336,10 @@ class DiscreteVoxel2D(DiscreteVoxel):
             If True, shows the magnetic field offset of the voxel. Otherwise, shows the vessel geometry. By default False.
         """
 
+        if not _BOLDDISPLAY_IMPORTED:
+            warnings.warn('Display functionality disabled because it failed to import.')
+            return
+        
         if show_dBz:
             plt.imshow(self.dBz_grid.T, origin='lower', cmap='seismic')
         else:
