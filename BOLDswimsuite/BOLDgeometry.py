@@ -4,10 +4,17 @@ import os
 from scipy import fft, io
 from typing import  List, Dict, Optional, Tuple, Union, Literal
 from tqdm import tqdm
-from mayavi import mlab
-import matplotlib.pyplot as plt
 import pickle
-from . import BOLDvessel, BOLDdisplay
+import warnings
+from . import BOLDvessel
+
+_BOLDDISPLAY_IMPORTED = True
+try:
+    import BOLDdisplay
+    from mayavi import mlab
+    import matplotlib.pyplot as plt
+except:
+    _BOLDDISPLAY_IMPORTED = False
 
 def size_from_k(diameter: float, k: float, ADC: float, dt: float) -> float:
     
@@ -389,6 +396,10 @@ class ContinuousVoxel3D(ContinuousVoxel):
         distance : Optional[float], optional
             Distance between the center of the voxel and the camera. By default None, which sets the distance to 5 times the voxel size.
         """
+
+        if not _BOLDDISPLAY_IMPORTED:
+            warnings.warn('Display functionality disabled because it failed to import.')
+            return
         
         sphere_vessels = []
         size = self.size
@@ -706,6 +717,9 @@ class ContinuousVoxel2D(ContinuousVoxel):
     def show(self):
         """Open a Matplotlib window, showing a visual representation of the voxel.
         """
+        if not _BOLDDISPLAY_IMPORTED:
+            warnings.warn('Display functionality disabled because it failed to import.')
+            return
 
         BOLDdisplay.matplotlib_plot_infinite_cylinder_or_sphere_2d_list(self.vessels)
 
@@ -1171,6 +1185,9 @@ class DiscreteVoxel3D(DiscreteVoxel):
         distance : Optional[float], optional
             Distance between the center of the voxel and the camera. By default None, which sets the distance to 5 times the voxel size.
         """
+        if not _BOLDDISPLAY_IMPORTED:
+            warnings.warn('Display functionality disabled because it failed to import.')
+            return
 
         if show_dBz:
             BOLDdisplay.mlab_plot_dBz_grid_3d(self.dBz_grid)
