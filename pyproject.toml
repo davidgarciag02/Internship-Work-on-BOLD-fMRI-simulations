@@ -5,6 +5,11 @@ description = "Simulation of BOLD fMRI"
 authors = ["jacobchausse <jacob.chausse@gmail.com>"]
 readme = "README.md"
 
+packages = [
+    { include = "BOLDswimsuite" },
+    { include = "BOLDswimsuite/**/*.py" },
+]
+
 [tool.poetry.dependencies]
 python = "~3.10"
 numpy = "^1.23.3"
