@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "BOLDswimsuite"
+name = "boldswimsuite"
 version = "0.1.0"
 description = "Simulation of BOLD fMRI"
 authors = ["jacobchausse <jacob.chausse@gmail.com>"]

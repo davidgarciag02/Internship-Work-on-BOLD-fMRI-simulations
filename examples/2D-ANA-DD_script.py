@@ -1,5 +1,5 @@
 #Importing relevant packages
-from BOLDswimsuite import BOLDgeometry, BOLDdeterministic
+from boldswimsuite import BOLDgeometry, BOLDdeterministic
 import matplotlib.pyplot as plt
 import numpy as np
 
