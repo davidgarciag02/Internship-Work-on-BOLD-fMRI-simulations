@@ -10,7 +10,7 @@ from . import BOLDvessel
 
 _BOLDDISPLAY_IMPORTED = True
 try:
-    import BOLDdisplay
+    from . import BOLDdisplay
     from mayavi import mlab
     import matplotlib.pyplot as plt
 except:
