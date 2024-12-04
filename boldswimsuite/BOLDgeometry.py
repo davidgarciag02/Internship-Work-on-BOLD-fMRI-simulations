@@ -1341,7 +1341,11 @@ class DiscreteVoxel2D(DiscreteVoxel):
             return
         
         if show_dBz:
-            plt.imshow(self.dBz_grid.T, origin='lower', cmap='seismic')
+            vmax = np.max(self.dBz_grid)
+            vmin = np.min(self.dBz_grid)
+            vmax = np.max([-vmin, vmax])
+            
+            plt.imshow(self.dBz_grid.T, origin='lower', cmap='seismic', vmax=vmax, vmin=-vmax)
         else:
             is_IV_grid = self.vessel_index_grid.T - 1.2*np.max(self.vessel_index_grid)*(self.vessel_index_grid.T>0)
             plt.imshow(is_IV_grid, origin='lower', cmap='gnuplot2')
