@@ -32,15 +32,15 @@ Using the command line, navigate to the location of the package (where it has be
 
 The package can be installed either with or without the dependencies required to run the lessons.
 
-To install with the lesson dependencies (for new users that want to do the lessons), execute the following command (from the location of the package):
+To install with the lesson and display dependencies (for new users that want to do the lessons), execute the following command (from the location of the package):
 ```
-pip install ".[lessons]"
+pip install ".[lessons,display]"
 ```
 
-To install without the lesson dependencies, execute the following command (from the location of the package):
+To install without the lesson or display dependencies, execute the following command (from the location of the package):
 ```
 pip install .
-``` 
+```
 
 This will install all the dependencies to the Python installation. To test if everything installed properly, from the same directory in the command line, execute the following: 
 
