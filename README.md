@@ -1,7 +1,7 @@
 # Installation Guide
 
 ## Requirements
-- Python 3.10.4
+- Python 3.10.X
 
 ## Installing BOLDswimsuite
 
