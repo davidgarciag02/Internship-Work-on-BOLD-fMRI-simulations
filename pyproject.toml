@@ -2,7 +2,7 @@
 name = "boldswimsuite"
 version = "0.1.0"
 description = ""
-authors = ["Jacob Chausse <jacob.chausse@gmail.com>"]
+authors = ["Jacob Chausse <jchausse@uwaterloo.ca>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -18,7 +18,7 @@ jupyter = { version = "^1.0.0", optional = true }
 mayavi = { version = "^4.8.1", optional = true }
 matplotlib = { version = "^3.6.0", optional = true }
 vtk = { version = "9.3", optional = true }
-#pyside2 = { version = "^5.15.2.1", optional = true }
+
 PyQt5 = { version = "^5.15.11", optional = true }
 configobj = { version="^5.0.9", optional = true}
 
