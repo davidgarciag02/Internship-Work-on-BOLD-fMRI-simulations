@@ -5,7 +5,7 @@
 
 ## Installing BOLDswimsuite
 
-Using the command line, navigate to the location of the package (where it has been cloned either from Github Desktop or git). The directory should have "pyproject.toml" in it (and this very file, "README.md").
+Using the command line, navigate to the location of the package. The directory should have "pyproject.toml" in it (and this very file, "README.md").
 
 The package can be installed either with or without the dependencies required to run the lessons.
 
