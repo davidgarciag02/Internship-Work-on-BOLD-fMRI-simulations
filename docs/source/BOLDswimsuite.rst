@@ -4,7 +4,7 @@ BOLDswimsuite package
 Submodules
 ----------
 
-boldswimsuite.BOLDvessel module
+BOLDvessel
 -------------------------------
 
 .. automodule:: boldswimsuite.BOLDvessel
@@ -12,7 +12,7 @@ boldswimsuite.BOLDvessel module
    :undoc-members:
    :show-inheritance:
 
-boldswimsuite.BOLDgeometry module
+BOLDgeometry
 ---------------------------------
 
 .. automodule:: boldswimsuite.BOLDgeometry
@@ -20,7 +20,7 @@ boldswimsuite.BOLDgeometry module
    :inherited-members:
    :show-inheritance:
 
-boldswimsuite.BOLDspins module
+BOLDspins
 ------------------------------
 
 .. automodule:: boldswimsuite.BOLDspins
@@ -28,7 +28,7 @@ boldswimsuite.BOLDspins module
    :inherited-members:
    :show-inheritance:
 
-boldswimsuite.BOLDsequence module
+BOLDsequence
 ---------------------------------
 
 .. automodule:: boldswimsuite.BOLDsequence
@@ -36,7 +36,7 @@ boldswimsuite.BOLDsequence module
    :undoc-members:
    :show-inheritance:
 
-boldswimsuite.BOLDdeterministic module
+BOLDdeterministic
 --------------------------------------
 
 .. automodule:: boldswimsuite.BOLDdeterministic

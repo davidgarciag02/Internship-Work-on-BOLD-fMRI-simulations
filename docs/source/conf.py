@@ -6,14 +6,10 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-import os, sys
-
-sys.path.insert(0, os.path.abspath('..'))
-
-
 project = 'BOLDswimsuite'
-copyright = '2023, Jacob Chausse'
+copyright = '2025, Jacob Chausse'
 author = 'Jacob Chausse'
+release = '1.0.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
