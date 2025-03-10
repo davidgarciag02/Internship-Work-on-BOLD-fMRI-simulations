@@ -744,8 +744,8 @@ class InfiniteCylinder2DNumba:
         # vector between each vessel's origin
         xy = other.origin - self.origin
         
-        x = xy[:,0]
-        y = xy[:,1]
+        x = xy[0]
+        y = xy[1]
 
         # minimum distance to allowed before intersection
         min_distance = (self.diameter + other.diameter) / 2

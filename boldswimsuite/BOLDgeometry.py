@@ -249,7 +249,8 @@ class ContinuousVoxel3D(ContinuousVoxel):
         vessel_type: Literal['cylinder', 'sphere']='cylinder',
         allow_vessel_intersection: bool = True,
         seed: Optional[int]=None,
-        progressbar: bool=True
+        progressbar: bool=True,
+        max_iter: int=1000,
     ) -> ContinuousVoxel3D:
         """Alternate constructor, randomly generates the 3D continuous voxel given a set of parameters.
 
@@ -281,6 +282,8 @@ class ContinuousVoxel3D(ContinuousVoxel):
             Seed for the random generation. The default is None, which does not use a seed.
         progressbar : bool, optional
             Whether to show a progress bar in the terminal, by default True.
+        max_iter : int, optional
+            Maximum number of iterations to try to obtain non-intersecting vessels (only if `allow_vessel_intersection==False`). Raises an exception if reached. Default is 1000.
 
         Returns
         -------
@@ -338,8 +341,11 @@ class ContinuousVoxel3D(ContinuousVoxel):
 
                     vessel_intersects = True
 
-                    counter = 0
+                    intersect_counter = 0
                     while vessel_intersects:
+                        if intersect_counter >= max_iter:
+                            raise Exception('Maximum number of iterations to find a non-intersecting vessel has been reached.')
+
                         # picks diameter
                         diameters = diameter_distributions[label]
                         diameter = rng.choice(diameters)
@@ -367,7 +373,7 @@ class ContinuousVoxel3D(ContinuousVoxel):
                             for vsl in voxel.vessels:
                                 if vsl.intersects(vessel):
                                     vessel_intersects = True
-                                    counter += 1
+                                    intersect_counter += 1
                                     break
 
                     # adding the vessel to the list
@@ -582,7 +588,8 @@ class ContinuousVoxel2D(ContinuousVoxel):
         vessel_type: Literal['cylinder']='cylinder',
         allow_vessel_intersection: bool = True,
         seed: Optional[int]=None,
-        progressbar: bool=True
+        progressbar: bool=True,
+        max_iter: int=1000
     ) -> ContinuousVoxel2D:
         """Alternate constructor, randomly generates the 2D continuous voxel given a set of parameters.
 
@@ -614,7 +621,9 @@ class ContinuousVoxel2D(ContinuousVoxel):
             Seed for the random generation. The default is None, which does not use a seed.
         progressbar : bool, optional
             Whether to show a progress bar in the terminal, by default True.
-
+        max_iter : int, optional
+            Maximum number of iterations to try to obtain non-intersecting vessels (only if `allow_vessel_intersection==False`). Raises an exception if reached. Default is 1000.
+        
         Returns
         -------
         ContinuousVoxel2D
@@ -668,8 +677,11 @@ class ContinuousVoxel2D(ContinuousVoxel):
 
                     vessel_intersects = True
 
-                    counter = 0
+                    intersect_counter = 0
                     while vessel_intersects:
+                        if intersect_counter >= max_iter:
+                            raise Exception('Maximum number of iterations to find a non-intersecting vessel has been reached.')
+
                         # picks diameter
                         diameters = diameter_distributions[label]
                         diameter = rng.choice(diameters)
@@ -694,10 +706,10 @@ class ContinuousVoxel2D(ContinuousVoxel):
                         vessel_intersects = False
                         
                         if not allow_vessel_intersection:
-                            for vessel in voxel.vessels:
-                                if vessel.intersects(vessel):
+                            for vsl in voxel.vessels:
+                                if vsl.intersects(vessel):
                                     vessel_intersects = True
-                                    counter += 1
+                                    intersect_counter += 1
                                     break
 
                     # adding the vessel to the list
