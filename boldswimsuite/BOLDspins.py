@@ -1,6 +1,6 @@
 import numpy as np
 from . import BOLDgeometry
-from .BOLDconstants import *
+from .BOLDutils import *
 from typing import Tuple, Optional, Union
 
 class Spins:
@@ -162,13 +162,13 @@ class Spins:
         """        
 
         if IV:
-            return self.geometry.size*(self.rng.random((self.num_spins, self._ndims)) - 0.5)
+            return self.geometry.size.value*(self.rng.random((self.num_spins, self._ndims)) - 0.5)
 
         positions_list = []
         num_IV_spins = self.num_spins
         
         while num_IV_spins != 0:
-            new_positions = self.geometry.size * (self.rng.random((self.num_spins, self._ndims)) - 0.5)
+            new_positions = self.geometry.size.value * (self.rng.random((self.num_spins, self._ndims)) - 0.5)
             vessel_indices = self.geometry.vessel_indices_from_positions(new_positions)
             num_IV_spins = np.flatnonzero(vessel_indices).size
             positions_list.append(new_positions[np.logical_not(vessel_indices)])

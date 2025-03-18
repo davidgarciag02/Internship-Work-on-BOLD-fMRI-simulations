@@ -153,19 +153,19 @@ class InfiniteCylinder3DNumba:
             
         return is_IV
 
-    def grid_is_IV(self, N, subvox_size):
+    def grid_is_IV(self, N: np.ndarray, subvox_size: np.ndarray):
         grid_origin = self.origin / subvox_size + (N/2)
 
-        X = np.reshape(np.arange(N), (N,1,1)) - grid_origin[0]
-        Y = np.reshape(np.arange(N), (1,N,1)) - grid_origin[1]
-        Z = np.reshape(np.arange(N), (1,1,N)) - grid_origin[2]
+        X = (np.reshape(np.arange(N[0]), (N[0],1,1)) - grid_origin[0])*subvox_size[0]
+        Y = (np.reshape(np.arange(N[1]), (1,N[1],1)) - grid_origin[1])*subvox_size[1]
+        Z = (np.reshape(np.arange(N[2]), (1,1,N[2])) - grid_origin[2])*subvox_size[2]
 
         sphi = np.sin(self.phi)
         cphi = np.cos(self.phi)
         stheta = np.sin(self.theta)
         ctheta = np.cos(self.theta)
 
-        grid_radius = (self.diameter/2) / subvox_size
+        grid_radius = (self.diameter/2)
 
         is_IV = ((X*cphi + Y*sphi)*ctheta - Z*stheta)**2 + (-X*sphi + Y*cphi)**2 <= grid_radius**2
 
@@ -262,8 +262,8 @@ class InfiniteCylinder3DNumba:
 
         Parameters
         ----------
-        voxel_size : float
-            Side length of the isometric voxel.
+        voxel_size : Union[np.ndarray]
+            3 element 1d-array of the x,y,z size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
 
         Returns
         -------
@@ -272,15 +272,19 @@ class InfiniteCylinder3DNumba:
         """
 
         # calculate radius of the sphere around the voxel
-        voxel_sphere_radius = 0.5 * np.sqrt(3) * voxel_size
+        voxel_sphere_radius = 0.5 * np.sqrt(3) * np.max(voxel_size)
 
         radial_vector_to_voxel_center = self._radial_vectors_from_positions(np.array([[0.,0.,0.]]))
 
-        #r = np.linalg.norm(radial_vector_to_voxel_center)
         r = np.linalg.norm(radial_vector_to_voxel_center)
         
+        # if the radius difference is less than zero, the vessel is outside the bounding sphere        
+        r2_diff = voxel_sphere_radius**2 - r**2
+        if r2_diff < 0.0:
+            return 0.0
+        
         # calculate the estimated volume percent of the generated vessel
-        height = 2 * np.sqrt(voxel_sphere_radius**2 - r**2)
+        height = 2 * np.sqrt(r2_diff)
         total_volume = 4 / 3 * np.pi * voxel_sphere_radius**3
         volume = height * np.pi * (self.diameter / 2)**2
         volume_fraction = volume / total_volume
@@ -356,7 +360,7 @@ class InfiniteCylinder3D:
     def from_random(
         diameter: float, 
         dchi: float,
-        voxel_size: float,
+        voxel_size: Union[float, np.ndarray],
         permeation_probability: float=0,
         label: str='',
         rng: np.random.Generator = np.random.default_rng()
@@ -369,8 +373,8 @@ class InfiniteCylinder3D:
             Vessel diameter (mm).
         dchi : float
             Susceptibility difference between the vessel and the surrounding tissue (cgs units).
-        voxel_size : float
-            Size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
+        voxel_size : Union[float, np.ndarray]
+            Size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm). If a float is passed, the voxel is isometric. If a 3 element 1d-array is passed, the voxel is anisometric.
         permeation_probability : float, optional
             Probability for a spin to permeate through the vessel wall (fraction of 1). By default 0.
         label : str, optional
@@ -383,8 +387,8 @@ class InfiniteCylinder3D:
         InfiniteCylinder3DNumba
         """        
 
-        # calculate radius of the sphere around the voxel
-        voxel_sphere_radius = 0.5 * np.sqrt(3) * voxel_size
+        # calculate radius of the sphere around the voxel (use the largest dimension for anisometric voxels)
+        voxel_sphere_radius = 0.5 * np.sqrt(3) * np.max(voxel_size)
 
         # generate a random direction for the vessel
         theta = np.arccos(2 * rng.random() - 1)
@@ -514,13 +518,13 @@ class InfiniteCylinder3D:
         """
         pass
 
-    def volume_fraction(self, voxel_size: float) -> float:
+    def volume_fraction(self, voxel_size: np.ndarray) -> float:
         """Given the side length of an isometric voxel, returns an estimate of the volume fraction that the vessel occupies in that space.
 
         Parameters
         ----------
-        voxel_size : float
-            Side length of the isometric voxel.
+        voxel_size : Union[np.ndarray]
+            3 element 1d-array of the x,y,z size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
 
         Returns
         -------
@@ -662,12 +666,11 @@ class InfiniteCylinder2DNumba:
         
         return is_IV
 
-    def grid_is_IV(self, N, subvox_size):
-
+    def grid_is_IV(self, N: np.ndarray, subvox_size: np.ndarray):
         grid_origin = self.origin / subvox_size + (N/2)
 
-        X = np.reshape(np.arange(N), (N,1)) - grid_origin[0]
-        Y = np.reshape(np.arange(N), (1,N)) - grid_origin[1]
+        X = (np.reshape(np.arange(N[0]), (N[0],1,1)) - grid_origin[0])*subvox_size[0]
+        Y = (np.reshape(np.arange(N[1]), (1,N[1],1)) - grid_origin[1])*subvox_size[1]
 
         grid_radius = (self.diameter/2) / subvox_size
 
@@ -755,13 +758,13 @@ class InfiniteCylinder2DNumba:
         
         return intersects
     
-    def volume_fraction(self, voxel_size: float) -> float:
+    def volume_fraction(self, voxel_size: np.ndarray) -> float:
         """Given the side length of an isometric voxel, returns an estimate of the volume fraction that the vessel occupies in that space.
 
         Parameters
         ----------
-        voxel_size : float
-            Side length of the isometric voxel.
+        voxel_size : Union[np.ndarray]
+            2 element 1d-array of the x,y size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
 
         Returns
         -------
@@ -769,7 +772,11 @@ class InfiniteCylinder2DNumba:
             Estimated volume fraction.
         """
 
-        total_volume = voxel_size**2
+        if self.origin[0] < -0.5*voxel_size[0] or self.origin[0] > 0.5*voxel_size[0] or \
+            self.origin[1] < -0.5*voxel_size[1] or self.origin[1] > 0.5*voxel_size[1]:
+            return 0.0
+
+        total_volume = voxel_size[0]*voxel_size[1]
         vessel_volume = np.pi*(self.diameter/2)**2
         
         volume_fraction = vessel_volume/total_volume
@@ -848,7 +855,7 @@ class InfiniteCylinder2D:
     def from_random(
         diameter: float, 
         dchi: float,
-        voxel_size: float,
+        voxel_size: Union[float, np.ndarray],
         permeation_probability: float=0,
         label: str='',
         rng: np.random.Generator = np.random.default_rng()
@@ -861,8 +868,8 @@ class InfiniteCylinder2D:
             Vessel diameter (mm).
         dchi : float
             Susceptibility difference between the vessel and the surrounding tissue (cgs units).
-        voxel_size : float
-            Size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
+        voxel_size : Union[float, np.ndarray]
+            Size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm). If a float is passed, the voxel is isometric. If a 2 element 1d-array is passed, the voxel is anisometric.
         permeation_probability : float, optional
             Probability for a spin to permeate through the vessel wall (fraction of 1). By default 0.
         label : str, optional
@@ -991,8 +998,8 @@ class InfiniteCylinder2D:
 
         Parameters
         ----------
-        voxel_size : float
-            Side length of the isometric voxel.
+        voxel_size : Union[np.ndarray]
+            2 element 1d-array of the x,y size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
 
         Returns
         -------
@@ -1092,12 +1099,12 @@ class Sphere3DNumba:
 
         return is_IV
 
-    def grid_is_IV(self, N, subvox_size):
+    def grid_is_IV(self, N: np.ndarray, subvox_size: np.ndarray):
         grid_origin = self.origin / subvox_size + (N/2)
 
-        X = np.reshape(np.arange(N), (N,1,1)) - grid_origin[0]
-        Y = np.reshape(np.arange(N), (1,N,1)) - grid_origin[1]
-        Z = np.reshape(np.arange(N), (1,1,N)) - grid_origin[2]
+        X = (np.reshape(np.arange(N[0]), (N[0],1,1)) - grid_origin[0])*subvox_size[0]
+        Y = (np.reshape(np.arange(N[1]), (1,N[1],1)) - grid_origin[1])*subvox_size[1]
+        Z = (np.reshape(np.arange(N[2]), (1,1,N[2])) - grid_origin[2])*subvox_size[2]
 
         grid_radius = (self.diameter/2) / subvox_size
 
@@ -1146,7 +1153,7 @@ class Sphere3DNumba:
         """
 
         # intravascular component is 0
-        return 0
+        return 0.0
 
     def intersects(self, other: Sphere3DNumba) -> bool:
         """Given another 3D sphere object, returns whether the two vessels intersect.
@@ -1174,16 +1181,22 @@ class Sphere3DNumba:
 
         Parameters
         ----------
-        voxel_size : float
-            Side length of the isometric voxel.
+        voxel_size : Union[np.ndarray]
+            3 element 1d-array of the x,y,z size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
 
         Returns
         -------
         float
             Estimated volume fraction.
         """
+        # if it is not in the voxel
+        if self.origin[0] < -0.5*voxel_size[0] or self.origin[0] > 0.5*voxel_size[0] or \
+            self.origin[1] < -0.5*voxel_size[1] or self.origin[1] > 0.5*voxel_size[1] or \
+            self.origin[2] < -0.5*voxel_size[2] or self.origin[2] > 0.5*voxel_size[2]:
+            return 0.0
+
         # calculate the estimated volume percent of the generated vessel
-        total_volume = voxel_size**3
+        total_volume = voxel_size[0]*voxel_size[1]*voxel_size[2]
         sphere_volume = 4 / 3 * np.pi * (self.diameter / 2)**3
         volume_fraction = sphere_volume / total_volume
 
@@ -1258,8 +1271,8 @@ class Sphere3D:
             Vessel diameter (mm).
         dchi : float
             Susceptibility difference between the vessel and the surrounding tissue (cgs units).
-        voxel_size : float
-            Size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
+        voxel_size : Union[float, np.ndarray]
+            Size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm). If a float is passed, the voxel is isometric. If a 3 element 1d-array is passed, the voxel is anisometric.
         permeation_probability : float, optional
             Probability for a spin to permeate through the vessel wall (fraction of 1). By default 0.
         label : str, optional
@@ -1382,8 +1395,8 @@ class Sphere3D:
 
         Parameters
         ----------
-        voxel_size : float
-            Side length of the isometric voxel.
+        voxel_size : Union[np.ndarray]
+            3 element 1d-array of the x,y,z size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
 
         Returns
         -------
@@ -1504,11 +1517,11 @@ class Sphere2DNumba:
 
         return is_IV
 
-    def grid_is_IV(self, N, subvox_size):
+    def grid_is_IV(self, N: np.ndarray, subvox_size: np.ndarray):
         grid_origin = self.origin / subvox_size + (N/2)
 
-        X = np.reshape(np.arange(N), (N,1)) - grid_origin[0]
-        Y = np.reshape(np.arange(N), (1,N)) - grid_origin[1]
+        X = (np.reshape(np.arange(N[0]), (N[0],1,1)) - grid_origin[0])*subvox_size[0]
+        Y = (np.reshape(np.arange(N[1]), (1,N[1],1)) - grid_origin[1])*subvox_size[1]
 
         grid_radius = (self.diameter/2) / subvox_size
 
@@ -1557,7 +1570,7 @@ class Sphere2DNumba:
         """
 
         # intravascular component is 0
-        return 0
+        return 0.0
 
     def intersects(self, other: Sphere2DNumba) -> bool:
         """Given another 2D sphere object, returns whether the two vessels intersect.
@@ -1585,15 +1598,21 @@ class Sphere2DNumba:
 
         Parameters
         ----------
-        voxel_size : float
-            Side length of the isometric voxel.
+        voxel_size : Union[np.ndarray]
+            2 element 1d-array of the x,y size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
 
         Returns
         -------
         float
             Estimated volume fraction.
         """
-        total_volume = voxel_size**2*self.diameter
+
+        # if it is not in the voxel
+        if self.origin[0] < -0.5*voxel_size[0] or self.origin[0] > 0.5*voxel_size[0] or \
+            self.origin[1] < -0.5*voxel_size[1] or self.origin[1] > 0.5*voxel_size[1]:
+            return 0.0
+        
+        total_volume = voxel_size[0]*voxel_size[1]*self.diameter
         sphere_volume = 4 / 3 * np.pi * (self.diameter / 2)**3
         volume_fraction = sphere_volume / total_volume
 
@@ -1812,8 +1831,8 @@ class Sphere2D:
 
         Parameters
         ----------
-        voxel_size : float
-            Side length of the isometric voxel.
+        voxel_size : Union[np.ndarray]
+            2 element 1d-array of the x,y size of the voxel in which the vessel is positioned, assuming the voxel is centered around zero (mm).
 
         Returns
         -------

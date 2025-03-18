@@ -6,7 +6,7 @@ from typing import  List, Dict, Optional, Tuple, Union, Literal
 from tqdm import tqdm
 import pickle
 import warnings
-from . import BOLDvessel
+from . import BOLDvessel, BOLDutils
 
 _BOLDDISPLAY_IMPORTED = True
 try:
@@ -119,12 +119,14 @@ class ContinuousVoxel(Voxel):
     def __init__(
         self,
         ndims: int,
-        size: float,
+        size: Union[float, np.ndarray],
         B0: float,
         vessels: Optional[Union[List[BOLDvessel.Vessel3D], List[BOLDvessel.Vessel2D]]]=None
     ):
         self.vessels = vessels if vessels is not None else []
-        self.size = size
+
+        self.size = BOLDutils.VoxelSize(size, ndims)
+        
         self.B0 = B0
         self._ndims = ndims
     
@@ -165,9 +167,9 @@ class ContinuousVoxel(Voxel):
     def wrap_boundary_positions(self, positions: np.ndarray) -> np.ndarray:
         self._validate_positions(positions)
         
-        positions += self.size * \
-            (1 * (positions < -0.5 * self.size) - \
-                1 * (positions > 0.5 * self.size))
+        positions += self.size.value * \
+            (1 * (positions < self.size.min) - \
+                1 * (positions > self.size.max))
         
         return positions
     
@@ -183,7 +185,7 @@ class ContinuousVoxel(Voxel):
         CBV = 0
 
         for vsl in self.vessels:
-            CBV += vsl.volume_fraction(self.size)
+            CBV += vsl.volume_fraction(self.size.value)
 
         return CBV
 
@@ -192,8 +194,8 @@ class ContinuousVoxel3D(ContinuousVoxel):
 
     Parameters
     ----------
-    size : float
-        Side length of the voxel (mm). Voxels are isometric.
+    size : Union[float, np.ndarray]
+        Side length of the voxel (mm). If a float is passed, the voxel is isometric. If a 3 element 1d-array is passed, the voxel is anisometric.
     B0 : float
         B0 magnetic field strength (Tesla).
     vessels : Optional[BOLDvessel.Vessel3D], optional
@@ -243,7 +245,7 @@ class ContinuousVoxel3D(ContinuousVoxel):
         weights: Dict[str, float],
         diameter_distributions: Dict[str, List[float]],
         dchis: Dict[str, float],
-        size: Optional[float]=None,
+        size: Optional[Union[float, np.ndarray]]=None,
         num_vessels: Optional[int]=None,
         permeation_probabilities: Optional[Dict[str, float]]=None,
         vessel_type: Literal['cylinder', 'sphere']='cylinder',
@@ -268,8 +270,8 @@ class ContinuousVoxel3D(ContinuousVoxel):
             Dictionary with each group label (keys) and a list of diameters of each group (values). The generated vessel diameters are uniformly sampled from the list.
         dchis : Dict[str, float]
             Dictionary with each group label (keys) and the magnetic susceptibility difference of each group (values). The magnetic susceptibility difference is between the vessel's intravascular compartment and the extravascular space. The magnetic susceptibility units are in cgs.
-        size : Optional[float], optional
-            Side length of the voxel (mm). Voxels are isometric. Do not set if `num_vessels` is set.
+        size : Optional[Union[float, np.ndarray]]
+            Side length of the voxel (mm). If a float is passed, the voxel is isometric. If a 3 element 1d-array is passed, the voxel is anisometric. Do not set if `num_vessels` is set.
         num_vessels : Optional[int], optional
             Number of vessels to generate. This will approximate the voxel size required to obtain the given number of vessels. Due to random generation of vessels, the resulting voxel will not have exactly the input number of vessels. Do not set if `size` is set.
         permeation_probabilities : Optional[Dict[str, float]], optional
@@ -360,7 +362,7 @@ class ContinuousVoxel3D(ContinuousVoxel):
                         vessel: BOLDvessel.Vessel3D = vessel_class.from_random(
                             diameter=diameter,
                             dchi=dchi,
-                            voxel_size=voxel.size,
+                            voxel_size=voxel.size.value,
                             permeation_probability=permeation_probability,
                             label=label,
                             rng=rng
@@ -380,7 +382,7 @@ class ContinuousVoxel3D(ContinuousVoxel):
                     voxel.add_vessel(vessel)
                     
                     # adding volume contribution from new vessel
-                    current_CBV += vessel.volume_fraction(voxel.size)
+                    current_CBV += vessel.volume_fraction(voxel.size.value)
                     
                     #manual override of the progress bar
                     progress_percentage = int(current_CBV / total_CBV * 100) 
@@ -410,12 +412,12 @@ class ContinuousVoxel3D(ContinuousVoxel):
         sphere_vessels = []
         size = self.size
 
-        distance = distance if distance is not None else 5*size
+        distance = distance if distance is not None else 5*np.max(size.value)
 
         for vessel in self.vessels:
             
             if isinstance(vessel, BOLDvessel.InfiniteCylinder3DNumba):
-                BOLDdisplay.mlab_plot_infinite_cylinder_3d(vessel, size)
+                BOLDdisplay.mlab_plot_infinite_cylinder_3d(vessel, size.value)
             
             if isinstance(vessel, BOLDvessel.Sphere3DNumba):
                 sphere_vessels.append(vessel)
@@ -423,7 +425,7 @@ class ContinuousVoxel3D(ContinuousVoxel):
         if len(sphere_vessels) > 0: 
             BOLDdisplay.mlab_plot_sphere_3d_list(sphere_vessels)        
 
-        mlab.outline(color=(0, 0, 0), line_width=5, extent=[-size/2, size/2, -size/2, size/2, -size/2, size/2])
+        mlab.outline(color=(0, 0, 0), line_width=5, extent=np.hstack([size.xlim, size.ylim, size.zlim]))
         mlab.view(
             azimuth=azimuth,
             elevation=elevation,
@@ -451,7 +453,7 @@ class ContinuousVoxel3D(ContinuousVoxel):
         return {
             'voxel_type': 'ContinuousVoxel3D',
             'vessels_tuple': vessels_tuple,
-            'size': self.size,
+            'size': self.size.value,
             'B0': self.B0
         }
     
@@ -506,7 +508,7 @@ class ContinuousVoxel3D(ContinuousVoxel):
         n_sphere_3d = 0
         n_unknown = 0
         
-        repr_str = f'ContinuousVoxel3D( size={self.size}, B0={self.B0}'
+        repr_str = f'ContinuousVoxel3D( size={self.size.value}, B0={self.B0}'
 
         for vessel in self.vessels:
             if isinstance(vessel, BOLDvessel.InfiniteCylinder3DNumba):
@@ -532,8 +534,8 @@ class ContinuousVoxel2D(ContinuousVoxel):
 
     Parameters
     ----------
-    size : float
-        Side length of the voxel (mm). Voxels are isometric.
+    size : Union[float, np.ndarray]
+        Side length of the voxel (mm). If a float is passed, the voxel is isometric. If a 2 element 1d-array is passed, the voxel is anisometric.
     B0 : float
         B0 magnetic field strength (Tesla).
     vessels : Optional[BOLDvessel.Vessel2D], optional
@@ -542,7 +544,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
 
     def __init__(
         self,
-        size: float,
+        size: Union[float, np.ndarray],
         B0: float,
         vessels: Optional[BOLDvessel.Vessel2D]=None
     ):
@@ -582,7 +584,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
         weights: Dict[str, float],
         diameter_distributions: Dict[str, List[float]],
         dchis: Dict[str, float],
-        size: Optional[float]=None,
+        size: Optional[Union[float, np.ndarray]]=None,
         num_vessels: Optional[int]=None,
         permeation_probabilities: Optional[Dict[str, float]]=None,
         vessel_type: Literal['cylinder']='cylinder',
@@ -607,10 +609,10 @@ class ContinuousVoxel2D(ContinuousVoxel):
             Dictionary with each group label (keys) and a list of diameters of each group (values). The generated vessel diameters are uniformly sampled from the list.
         dchis : Dict[str, float]
             Dictionary with each group label (keys) and the magnetic susceptibility difference of each group (values). The magnetic susceptibility difference is between the vessel's intravascular compartment and the extravascular space. The magnetic susceptibility units are in cgs.
-        size : float
-            Side length of the voxel (mm). Voxels are isometric. Do not set if `num_vessels` is set.
+        size : Union[float, np.ndarray]
+            Side length of the voxel (mm). If a float is passed, the voxel is isometric. If a 2 element 1d-array is passed, the voxel is anisometric. Do not set if `num_vessels` is set.
         num_vessels : Optional[int], optional
-            Number of vessels to generate. This will approximate the voxel size required to obtain the given number of vessels. Due to random generation of vessels, the resulting voxel will not have exactly the input number of vessels. Do not set if `size` is set.
+            Number of vessels to generate. This will approximate the voxel size (isometric) required to obtain the given number of vessels. Due to random generation of vessels, the resulting voxel will not have exactly the input number of vessels. Do not set if `size` is set.
         permeation_probabilities : Optional[Dict[str, float]], optional
             Dictionary with each group label (keys) and the permeation probability of each group (values). The permeation probability applies only to Monte Carlo simulations. Any spins diffusing across the vessel wall during a Monte Carlo step will have this probability of permeating through. The default value will set all probabilities to 0, making the vessels impermeable.
         vessel_type : Literal['cylinder']='cylinder'
@@ -696,7 +698,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
                         vessel: BOLDvessel.Vessel2D = vessel_class.from_random(
                             diameter=diameter,
                             dchi=dchi,
-                            voxel_size=voxel.size,
+                            voxel_size=voxel.size.value,
                             permeation_probability=permeation_probability,
                             label=label,
                             rng=rng
@@ -716,7 +718,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
                     voxel.add_vessel(vessel)
                     
                     # adding volume contribution from new vessel
-                    current_CBV += vessel.volume_fraction(voxel.size)
+                    current_CBV += vessel.volume_fraction(voxel.size.value)
                     
                     #manual override of the progress bar
                     progress_percentage = round(current_CBV / total_CBV * 100) 
@@ -736,8 +738,8 @@ class ContinuousVoxel2D(ContinuousVoxel):
         BOLDdisplay.matplotlib_plot_infinite_cylinder_or_sphere_2d_list(self.vessels)
 
         plt.gca().set_aspect('equal')
-        plt.ylim([-self.size/2, self.size/2])
-        plt.xlim([-self.size/2, self.size/2])
+        plt.xlim(self.size.xlim)
+        plt.ylim(self.size.ylim)
         plt.show()
 
     def to_dict(self):
@@ -809,7 +811,7 @@ class ContinuousVoxel2D(ContinuousVoxel):
         n_sphere_2d = 0
         n_unknown = 0
         
-        repr_str = f'ContinuousVoxel2D( size={self.size}, B0={self.B0}'
+        repr_str = f'ContinuousVoxel2D( size={self.size.value}, B0={self.B0}'
 
         for vessel in self.vessels:
             if isinstance(vessel, BOLDvessel.InfiniteCylinder2DNumba):
@@ -838,7 +840,7 @@ class DiscreteVoxel(Voxel):
         vessel_index_grid: np.ndarray,
         dBz_grid: np.ndarray,
         permeation_probability_list: List[float],
-        size: float
+        size: Union[float, np.ndarray]
     ):
         if not np.issubdtype(vessel_index_grid.dtype, np.integer):
             raise Exception('Input \'vessel_index_mask\' is not of integer type.')
@@ -847,21 +849,16 @@ class DiscreteVoxel(Voxel):
         self.permeation_probability_list = permeation_probability_list
         self.vessel_index_grid = vessel_index_grid
         self.dBz_grid = dBz_grid
-        self.size = size
+        self.size = BOLDutils.VoxelSize(size, ndims, np.array(self.vessel_index_grid.shape, dtype=int))
 
-        N = self.vessel_index_grid.shape[0]
-
-        if ((N,)*self._ndims != self.vessel_index_grid.shape) or ((N,)*self._ndims != self.dBz_grid.shape):
-            raise Exception('Input \'vessel_index_mask\' or \'dBz\' has inconsistent shape or is not isometric.')
-
-        self.N = N
+        if self.vessel_index_grid.shape != self.dBz_grid.shape:
+            raise Exception('Input shape of \'vessel_index_mask\' and \'dBz\' is inconsistent.')
 
     def _position_to_grid(
         self,
         positions: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        subvoxel_per_mm = self.N / self.size
-        grid_positions = ((positions + 0.5 * self.size ) * subvoxel_per_mm).astype(int)
+        grid_positions = ((positions + 0.5*self.size.value)*self.size.dNds).astype(int)
         grid_position_tuple = tuple((grid_positions[:, i] for i in range(self._ndims)))
 
         return grid_position_tuple
@@ -886,9 +883,9 @@ class DiscreteVoxel(Voxel):
     def wrap_boundary_positions(self, positions: np.ndarray) -> np.ndarray:
         self._validate_positions(positions)
 
-        positions += self.size * \
-            (1 * (positions < -0.5 * self.size) - \
-                1 * (positions > 0.5 * self.size))
+        positions += self.size.value * \
+            (1 * (positions < self.size.min) - \
+                1 * (positions > self.size.max))
         
         return positions
     
@@ -916,8 +913,8 @@ class DiscreteVoxel3D(DiscreteVoxel):
         Float array of shape (N, N, N). It represents the magnetic field offset space (in Tesla). This should be matched to the `vessel_index_grid`.
     permeation_probability_list : List[float]
         List of probabilities (between 0 and 1) which indicate the probability for Monte Carlo spins to permeate in and out of the vessels. The first item in the list corresponds to the permeation probability of all vessels with a vessel index of 1, the second item in the list corresponds to the permeation probability of all vessels with a vessel index of 2, and so on for any additional vessel index. The extravascular space does not have a permeation probability, so a vessel index of 0 does not have an associated permeation probability in the list.
-    size : float
-        The side length of the voxel (in mm). Voxels are isometric.
+    size : Union[float, np.ndarray]
+        Side length of the voxel (mm). If a float is passed, the voxel is isometric. If a 3 element 1d-array is passed, the voxel is anisometric.
     """
 
     def __init__(
@@ -938,15 +935,15 @@ class DiscreteVoxel3D(DiscreteVoxel):
     @classmethod
     def from_continuous_analytical(
         cls,
-        N: int,
+        N: Union[int, np.ndarray],
         voxel: ContinuousVoxel3D
     ) -> DiscreteVoxel3D:
         """Alternate constructor, converts a 3D continuous voxel to a 3D discrete voxel. The magnetic field offset (dBz) is calculated using the analytical equations from the 3D continuous voxel object.
 
         Parameters
         ----------
-        N : int
-            The number of discrete points along the voxel edges. Therefore the output 3D discrete voxel is represented on an (N, N, N) grid.
+        N : Union[int, np.ndarray]
+            The number of discrete points along the voxel edges. If an int, a (N, N, N) grid is made. If a 3 element int array is passed, the grid will have shape N.
         voxel : ContinuousVoxel3D
             3D continuous voxel object to convert to discrete space.
 
@@ -954,18 +951,20 @@ class DiscreteVoxel3D(DiscreteVoxel):
         -------
         DiscreteVoxel3D
             3D discrete voxel.
-        """        
-        size = voxel.size
+        """
+        size = BOLDutils.VoxelSize(voxel.size, grid_shape=N)
 
-        linear_coord = np.linspace(-size/2, size/2, N)
-        X, Y, Z = np.meshgrid(linear_coord, linear_coord, linear_coord, indexing='ij')
+        x_coord = np.linspace(size.xlim[0], size.xlim[1], size.grid_shape[0])
+        y_coord = np.linspace(size.ylim[0], size.ylim[1], size.grid_shape[1])
+        z_coord = np.linspace(size.zlim[0], size.zlim[1], size.grid_shape[2])
+        X, Y, Z = np.meshgrid(x_coord, y_coord, z_coord, indexing='ij')
 
         linear_positions = np.stack((X.ravel(), Y.ravel(), Z.ravel()), axis=1)
 
         linear_dBz, linear_vessel_indices = voxel.dBz_vessel_indices_from_positions(linear_positions)
 
-        vessel_index_grid = linear_vessel_indices.reshape(N, N, N)
-        dBz_grid = linear_dBz.reshape(N, N, N)
+        vessel_index_grid = linear_vessel_indices.reshape(size.grid_shape)
+        dBz_grid = linear_dBz.reshape(size.grid_shape)
 
         permeation_probability_list = [vsl.permeation_probability for vsl in voxel.vessels]
 
@@ -973,27 +972,27 @@ class DiscreteVoxel3D(DiscreteVoxel):
             vessel_index_grid=vessel_index_grid,
             dBz_grid=dBz_grid,
             permeation_probability_list=permeation_probability_list,
-            size=size
+            size=size.value
         )
 
     @classmethod
     def from_continuous_FFT(
         cls,
-        N: int,
+        N: Union[int, np.ndarray],
         voxel: ContinuousVoxel,
-        padding: int=0,
+        padding: Union[int, np.ndarray]=0,
         extend: bool=False,
     ) -> DiscreteVoxel3D:
         """Alternate constructor, converts a 3D continuous voxel to a 3D discrete voxel. The magnetic field offset (dBz) is calculated using FFT convolution.
 
         Parameters
         ----------
-        N : int
-            The number of discrete points along the voxel edges. Therefore the output 3D discrete voxel is represented on an (N, N, N) grid.
+        N : Union[int, np.ndarray]
+            The number of discrete points along the voxel edges. If an int, a (N, N, N) grid is made. If a 3 element int array is passed, the grid will have shape N.
         voxel : ContinuousVoxel
             3D continuous voxel object to convert to discrete space.
-        padding : int, optional
-            Amount of zero padding to add to each side of the voxel before the FFT step. The default is 0, which will cause wrapping of the field offset. Using a value of N/2 will completely remove the wrapping effect but is more computationally demanding.
+        padding : Union[int, np.ndarray], optional
+            Amount of zero padding to add to each side of the voxel before the FFT step. If an int, padding is isometric. If a 3 element int array, different padding is applied to each direction. The default is 0, which will cause wrapping of the field offset. Using a value of N/2 will completely remove the wrapping effect but is more computationally demanding.
         extend : bool, optional
             If True, will extend the vessels to the zero padding, but is more computationally demanding. Doing so creates a more accurate representation of the continuous voxel (e.g. infinite cylinders cannot be infinite in the discrete space, but extending the vessels will make them "more" infinite). Default is False.
 
@@ -1003,17 +1002,24 @@ class DiscreteVoxel3D(DiscreteVoxel):
             3D discrete voxel.
         """
 
-        size = voxel.size
-        subvox_size = size/N
+        size = BOLDutils.VoxelSize(voxel.size, grid_shape=N)
+        subvox_size = size.dsdN
 
-        N = N + 2*padding if extend else N
+        if isinstance(padding, int):
+            padding = padding*np.ones(3, dtype=int)
+        elif not isinstance(padding, np.ndarray):
+            raise TypeError('Parameter \'padding\' must be either an int or a 3 element 1d int array.')
+        elif padding.shape != size.grid_shape.shape:
+            raise ValueError('Shape of parameter \'padding\' must be (3,).')
 
-        vessel_index_grid = np.zeros((N,N,N), dtype=int)
-        grid_dchi = np.zeros((N,N,N))
+        grid_shape = size.grid_shape + 2*padding if extend else size.grid_shape
+
+        vessel_index_grid = np.zeros(grid_shape, dtype=int)
+        grid_dchi = np.zeros(grid_shape)
 
         for vsl_counter, vsl in enumerate(voxel.vessels):
             
-            is_IV = vsl.grid_is_IV(N, subvox_size)
+            is_IV = vsl.grid_is_IV(grid_shape, subvox_size)
 
             mask_tmp = np.logical_and(np.logical_not(vessel_index_grid), is_IV)
             
@@ -1023,65 +1029,26 @@ class DiscreteVoxel3D(DiscreteVoxel):
         permeation_probability_list = [vsl.permeation_probability for vsl in voxel.vessels]
 
         if extend:
-            dBz_grid = cls._dchi_mask_to_dBz_FFT(grid_dchi, 0, voxel.B0)
+            dBz_grid = cls._dchi_mask_to_dBz_FFT(grid_dchi, np.zeros(3, dtype=int), voxel.B0)
         else:
             dBz_grid = cls._dchi_mask_to_dBz_FFT(grid_dchi, padding, voxel.B0)
 
-        if extend and padding > 0:
-            vessel_index_grid = vessel_index_grid[padding:-padding,padding:-padding,padding:-padding]
-            dBz_grid = dBz_grid[padding:-padding,padding:-padding,padding:-padding]
+        if extend and np.any(padding > 0):
+            if padding[0] > 0:
+                dBz_grid = dBz_grid[padding[0]:-padding[0], :, :]
+                vessel_index_grid = vessel_index_grid[padding[0]:-padding[0], :, :]
+            if padding[1] > 0:
+                dBz_grid = dBz_grid[:, padding[1]:-padding[1], :]
+                vessel_index_grid = vessel_index_grid[:, padding[1]:-padding[1], :]
+            if padding[2] > 0:
+                dBz_grid = dBz_grid[:, :, padding[2]:-padding[2]]
+                vessel_index_grid = vessel_index_grid[:, :, padding[2]:-padding[2]]
 
         return cls(
             vessel_index_grid=vessel_index_grid,
             dBz_grid=dBz_grid,
             permeation_probability_list=permeation_probability_list,
-            size=size
-        )
-    
-    @classmethod
-    def from_file_FFT(
-        cls,
-        filepath: str,
-        dchi_list: List[float],
-        permeation_probability_list: List[float],
-        size: float,
-        B0: float,
-        padding: int=0
-    ) -> DiscreteVoxel3D:
-             
-        filename, file_extension = os.path.splitext(filepath)
-
-        if file_extension == '.txt':
-            vessel_index_grid = np.loadtxt(filepath)
-
-            if not vessel_index_grid.shape[0]**2 == vessel_index_grid.shape[1]:
-                raise Exception('Input txt mask is not isometric!')
-
-            vessel_index_grid = vessel_index_grid.reshape((vessel_index_grid.shape[0], vessel_index_grid.shape[0], vessel_index_grid.shape[0]))
-
-        elif file_extension == '.npy':
-            vessel_index_grid = np.load(filepath)
-
-        elif file_extension == '.mat':
-            mask_dict = io.loadmat(filepath, mdict=None, appendmat=True)
-        
-            vessel_index_grid = mask_dict['mask']
-        
-        else:
-            raise Exception('File did not have a supported file type (i.e.: .txt, .npy, .mat)')
-
-        grid_dchi = np.array(vessel_index_grid, dtype=float)
-
-        for i, dchi in enumerate(dchi_list):
-            grid_dchi[grid_dchi == i+1] = dchi
-        
-        dBz_grid = cls._dchi_mask_to_dBz_FFT(grid_dchi, padding, B0)
-
-        return cls(
-            vessel_index_grid=vessel_index_grid.astype(int),
-            dBz_grid=dBz_grid,
-            permeation_probability_list=permeation_probability_list,
-            size=size
+            size=size.value
         )
     
     @classmethod
@@ -1092,7 +1059,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
         permeation_probability_list: List[float],
         size: float,
         B0: float,
-        padding: int=0
+        padding: Union[int, np.ndarray]=0
     ) -> DiscreteVoxel3D:
         """Alternate constructor, creates a 3D discrete voxel from an imported vessel index grid and magnetic susceptibility mapping. The magnetic field offset (dBz) is calculated using FFT convolution.
 
@@ -1104,19 +1071,27 @@ class DiscreteVoxel3D(DiscreteVoxel):
             The susceptibility difference between the intravascular and extravascular space. Can be a list of magnetic susceptibility differences where the first item in the list corresponds to the magnetic susceptibility difference of of all vessels with a vessel index of 1, the second item in the list corresponds to the magnetic susceptibility difference of all vessels with a vessel index of 2, and so on for any additional vessel index. Can also be a float array of shape (N, N, N), indicating the magnetic susceptibility difference at each point in space. Units are in cgs.
         permeation_probability_list : List[float]
             List of probabilities (between 0 and 1) which indicate the probability for Monte Carlo spins to permeate in and out of the vessels. The first item in the list corresponds to the permeation probability of all vessels with a vessel index of 1, the second item in the list corresponds to the permeation probability of all vessels with a vessel index of 2, and so on for any additional vessel index. The extravascular space does not have a permeation probability, so a vessel index of 0 does not have an associated permeation probability in the list.
-        size : float
-            Side length of the voxel (mm). Voxels are isometric.
+        size : Union[float, np.ndarray]
+            Side length of the voxel (mm). If a float is passed, the voxel is isometric. If a 3 element 1d-array is passed, the voxel is anisometric.
         B0 : float
             B0 magnetic field strength (Tesla).
-        padding : int, optional
-            Amount of zero padding to add to each side of the voxel before the FFT step. The default is 0, which will cause wrapping of the field offset. Using a value of N/2 will completely remove the wrapping effect but is more computationally demanding.
+        padding : Union[int, np.ndarray], optional
+            Amount of zero padding to add to each side of the voxel before the FFT step. If an int, padding is isometric. If a 3 element int array, different padding is applied to each direction. The default is 0, which will cause wrapping of the field offset. Using a value of N/2 will completely remove the wrapping effect but is more computationally demanding.
 
         Returns
         -------
         DiscreteVoxel3D
             3D discrete voxel.   
         """
+        size = BOLDutils.VoxelSize(size, grid_shape=vessel_index_grid.shape)
 
+        if isinstance(padding, int):
+            padding = padding*np.ones(3, dtype=int)
+        elif not isinstance(padding, np.ndarray):
+            raise TypeError('Parameter \'padding\' must be either an int or a 3 element 1d int array.')
+        elif padding.shape != size.grid_shape.shape:
+            raise ValueError('Shape of parameter \'padding\' must be (3,).')
+        
         if isinstance(dchis, list):
             grid_dchi = np.array(vessel_index_grid, dtype=float)
 
@@ -1127,7 +1102,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
             grid_dchi = dchis
 
         else:
-            raise Exception('`dchis` argument is neither a list nor a Numpy array.')
+            raise Exception('\'dchis\' argument is neither a list nor a Numpy array.')
         
         dBz_grid = cls._dchi_mask_to_dBz_FFT(grid_dchi, padding, B0)
 
@@ -1141,18 +1116,21 @@ class DiscreteVoxel3D(DiscreteVoxel):
     @staticmethod
     def _dchi_mask_to_dBz_FFT(
         dchi_grid: np.ndarray,
-        padding: int,
+        padding: np.ndarray,
         B0: float
     ):
-        N = dchi_grid.shape[0]
-        half_N = int(np.ceil(N/2))
+        N = np.array(dchi_grid.shape, dtype=int)
 
-        if N % 2 != 0:
-            pos_range = np.linspace(-half_N + 1, half_N - 1, N) 
-        else:
-            pos_range = np.linspace(-half_N + 1, half_N, N)
+        range_list = []
+        for Ni in N:
+            half_N = int(np.ceil(Ni/2))
+            if Ni % 2 != 0:
+                pos_range = np.linspace(-half_N + 1, half_N - 1, Ni)
+            else:
+                pos_range = np.linspace(-half_N + 1, half_N, Ni)
+            range_list.append(pos_range)
         
-        X, Y, Z = np.meshgrid(pos_range, pos_range, pos_range, indexing='ij')
+        X, Y, Z = np.meshgrid(*range_list, indexing='ij')
         r_squared = X**2 + Y**2 + Z**2
 
         zeros_indices = np.where(r_squared == 0)
@@ -1163,23 +1141,27 @@ class DiscreteVoxel3D(DiscreteVoxel):
 
         pad = padding * 2 + N
 
-        kernel_FFT = fft.rfftn(kernel_pos, s=(pad,pad,pad))
+        kernel_FFT = fft.rfftn(kernel_pos, s=pad)
 
-        susceptibility_map_FFT = fft.rfftn(4*np.pi*dchi_grid, s=(pad,pad,pad))
+        susceptibility_map_FFT = fft.rfftn(4*np.pi*dchi_grid, s=pad)
         
         dBz_padded = B0 * fft.irfftn(
             susceptibility_map_FFT * kernel_FFT, 
-            s=(pad, pad, pad), 
-            overwrite_x = True
+            s=pad,
+            overwrite_x=True
         )
 
-        shift = int(np.floor(N/2) - 1) - padding
-        dBz_padded = np.roll(dBz_padded, shift=(-shift, -shift, -shift), axis=(0,1,2))
-        
-        if padding > 0:
-            dBz = dBz_padded[padding:-padding,padding:-padding,padding:-padding]
-        else:
-            dBz = dBz_padded
+        shift = (np.floor(N/2) - 1).astype(int) - padding
+        dBz_padded = np.roll(dBz_padded, shift=-shift, axis=(0,1,2))
+
+        dBz = dBz_padded
+
+        if padding[0] > 0:
+            dBz = dBz[padding[0]:-padding[0], :, :]
+        if padding[1] > 0:
+            dBz = dBz[:, padding[1]:-padding[1], :]
+        if padding[2] > 0:
+            dBz = dBz[:, :, padding[2]:-padding[2]]
 
         return dBz
     
@@ -1206,17 +1188,15 @@ class DiscreteVoxel3D(DiscreteVoxel):
         else:
             BOLDdisplay.mlab_plot_is_IV_grid_3d((self.vessel_index_grid > 0).astype(float))
         
-        distance = distance if distance is not None else 5*self.N
+        distance = distance if distance is not None else 5*np.max(self.size.grid_shape)
 
-        mlab.outline(color=(0, 0, 0), line_width=5, extent=[0, self.N, 0, self.N, 0, self.N])
-
-        halfN = int(self.N/2)
+        mlab.outline(color=(0, 0, 0), line_width=5, extent=[0, self.size.grid_shape[0], 0, self.size.grid_shape[1], 0, self.size.grid_shape[2]])
 
         mlab.view(
             azimuth=azimuth,
             elevation=elevation,
             distance=distance,
-            focalpoint=np.array([halfN, halfN, halfN], dtype=float)
+            focalpoint=self.size.grid_shape/2
         )
 
         mlab.show()
@@ -1300,15 +1280,15 @@ class DiscreteVoxel2D(DiscreteVoxel):
     @classmethod
     def from_continuous_analytical(
         cls,
-        N: int,
+        N: Union[int, np.ndarray],
         voxel: ContinuousVoxel2D
     ) -> DiscreteVoxel2D:
         """Alternate constructor, converts a 2D continuous voxel to a 2D discrete voxel. The magnetic field offset (dBz) is calculated using the analytical equations from the 2D continuous voxel object.
 
         Parameters
         ----------
-        N : int
-            The number of discrete points along the voxel edges. Therefore the output 2D discrete voxel is represented on an (N, N) grid.
+        N : Union[int, np.ndarray]
+            The number of discrete points along the voxel edges. If an int, a (N, N) grid is made. If a 2 element int array is passed, the grid will have shape N.
         voxel : ContinuousVoxel2D
             2D continuous voxel object to convert to discrete space.
 
@@ -1318,17 +1298,18 @@ class DiscreteVoxel2D(DiscreteVoxel):
             2D discrete voxel.
         """
 
-        size = voxel.size
+        size = BOLDutils.VoxelSize(voxel.size, grid_shape=N)
 
-        linear_coord = np.linspace(-size/2, size/2, N)
-        X, Y = np.meshgrid(linear_coord, linear_coord, indexing='ij')
+        x_coord = np.linspace(size.xlim[0], size.xlim[1], size.grid_shape[0])
+        y_coord = np.linspace(size.ylim[0], size.ylim[1], size.grid_shape[1])
+        X, Y = np.meshgrid(x_coord, y_coord, indexing='ij')
 
         linear_positions = np.stack((X.ravel(), Y.ravel()), axis=1)
 
         linear_dBz, linear_vessel_indices = voxel.dBz_vessel_indices_from_positions(linear_positions)
 
-        vessel_index_grid = linear_vessel_indices.reshape(N, N)
-        dBz_grid = linear_dBz.reshape(N, N)
+        vessel_index_grid = linear_vessel_indices.reshape(size.grid_shape)
+        dBz_grid = linear_dBz.reshape(size.grid_shape)
 
         permeation_probability_list = [vsl.permeation_probability for vsl in voxel.vessels]
 
@@ -1336,7 +1317,7 @@ class DiscreteVoxel2D(DiscreteVoxel):
             vessel_index_grid=vessel_index_grid,
             dBz_grid=dBz_grid,
             permeation_probability_list=permeation_probability_list,
-            size=size
+            size=size.value
         )
 
     def show(self, show_dBz: bool=False):
@@ -1352,15 +1333,17 @@ class DiscreteVoxel2D(DiscreteVoxel):
             warnings.warn('Display functionality disabled because it failed to import.')
             return
         
+        aspect = self.size.dNds[0]/self.size.dNds[1]
+        
         if show_dBz:
             vmax = np.max(self.dBz_grid)
             vmin = np.min(self.dBz_grid)
             vmax = np.max([-vmin, vmax])
             
-            plt.imshow(self.dBz_grid.T, origin='lower', cmap='seismic', vmax=vmax, vmin=-vmax)
+            plt.imshow(self.dBz_grid.T, origin='lower', cmap='seismic', vmax=vmax, vmin=-vmax, aspect=aspect)
         else:
             is_IV_grid = self.vessel_index_grid.T - 1.2*np.max(self.vessel_index_grid)*(self.vessel_index_grid.T>0)
-            plt.imshow(is_IV_grid, origin='lower', cmap='gnuplot2')
+            plt.imshow(is_IV_grid, origin='lower', cmap='gnuplot2', aspect=aspect)
         
         plt.show()
 
@@ -1379,7 +1362,7 @@ class DiscreteVoxel2D(DiscreteVoxel):
                 filepath,
                 vessel_index_grid = self.vessel_index_grid,
                 dBz_grid = self.dBz_grid,
-                size=self.size,
+                size=self.size.value,
                 permeation_probability_array = np.array(self.permeation_probability_list)
             )
         else:
@@ -1387,7 +1370,7 @@ class DiscreteVoxel2D(DiscreteVoxel):
                 filepath,
                 vessel_index_grid = self.vessel_index_grid,
                 dBz_grid = self.dBz_grid,
-                size=self.size,
+                size=self.size.value,
                 permeation_probability_array = np.array(self.permeation_probability_list)
             )
 

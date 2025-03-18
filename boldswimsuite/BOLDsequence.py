@@ -2,7 +2,7 @@ import numpy as np
 from typing import List, Tuple, Union, Optional
 from tqdm import tqdm
 import warnings
-from .BOLDconstants import *
+from .BOLDutils import *
 from . import BOLDspins
 
 class Sequence:
