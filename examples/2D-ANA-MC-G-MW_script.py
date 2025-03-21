@@ -107,8 +107,6 @@ def main():
     voxel=continuous_voxel
     )
 
-    discrete_voxel.show(show_dBz=True)
-
     # show the voxel dBz and vessels and differentiate the blood vessels from axons
     is_IV_grid = 1*(discrete_voxel.vessel_index_grid.T > 0)
     
@@ -116,7 +114,11 @@ def main():
         is_IV_grid[discrete_voxel.vessel_index_grid.T == (vind+1)] = 2
     
     plt.imshow(is_IV_grid, origin='lower')
+    plt.title('Randomly picked blood vessels')
     plt.show()
+
+
+    discrete_voxel.show(show_dBz=True)
 
     # create spins object for simulation
     spins = BOLDspins.Spins2D(

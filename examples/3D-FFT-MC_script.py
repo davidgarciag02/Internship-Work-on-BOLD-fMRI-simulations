@@ -7,8 +7,7 @@ def main():
     num_steps = 600
     
     continuous_voxel = BOLDgeometry.ContinuousVoxel3D.from_random(
-        #num_vessels=50,
-        size=np.array([0.05, 0.03, 0.025]),
+        num_vessels=50,
         CBV=0.02,
         B0=3,
         labels=['vesselGroup1'],
@@ -25,7 +24,7 @@ def main():
     print(continuous_voxel)
 
     discrete_voxel = BOLDgeometry.DiscreteVoxel3D.from_continuous_FFT(
-        N=np.array([200, 120, 100]),
+        N=200,
         voxel=continuous_voxel,
         padding=100,
         extend=True

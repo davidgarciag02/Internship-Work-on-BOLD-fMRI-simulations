@@ -204,7 +204,7 @@ class ContinuousVoxel3D(ContinuousVoxel):
 
     def __init__(
         self,
-        size: float,
+        size: Union[float, np.ndarray],
         B0: float,
         vessels: Optional[BOLDvessel.Vessel3D]=None
     ):
@@ -922,7 +922,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
         vessel_index_grid: np.ndarray,
         dBz_grid: np.ndarray,
         permeation_probability_list: List[float],
-        size: float
+        size: Union[float, np.ndarray]
     ):
         super().__init__(
             ndims=3,
@@ -1057,7 +1057,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
         vessel_index_grid: np.ndarray,
         dchis: Union[List[float], np.ndarray],
         permeation_probability_list: List[float],
-        size: float,
+        size: Union[float, np.ndarray],
         B0: float,
         padding: Union[int, np.ndarray]=0
     ) -> DiscreteVoxel3D:
@@ -1083,7 +1083,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
         DiscreteVoxel3D
             3D discrete voxel.   
         """
-        size = BOLDutils.VoxelSize(size, grid_shape=vessel_index_grid.shape)
+        size = BOLDutils.VoxelSize(size, grid_shape=np.array(vessel_index_grid.shape, dtype=int))
 
         if isinstance(padding, int):
             padding = padding*np.ones(3, dtype=int)
@@ -1217,7 +1217,7 @@ class DiscreteVoxel3D(DiscreteVoxel):
                 filepath,
                 vessel_index_grid = self.vessel_index_grid,
                 dBz_grid = self.dBz_grid,
-                size=self.size,
+                size=self.size.value,
                 permeation_probability_array = np.array(self.permeation_probability_list)
             )
         else:
@@ -1258,8 +1258,8 @@ class DiscreteVoxel2D(DiscreteVoxel):
         Float array of shape (N, N). It represents the magnetic field offset space (in Tesla). This should be matched to the `vessel_index_grid`.
     permeation_probability_list : List[float]
         List of probabilities (between 0 and 1) which indicate the probability for Monte Carlo spins to permeate in and out of the vessels. The first item in the list corresponds to the permeation probability of all vessels with a vessel index of 1, the second item in the list corresponds to the permeation probability of all vessels with a vessel index of 2, and so on for any additional vessel index. The extravascular space does not have a permeation probability, so a vessel index of 0 does not have an associated permeation probability in the list.
-    size : float
-        The side length of the voxel (in mm). Voxels are isometric.
+    size : Union[float, np.ndarray]
+        Side length of the voxel (mm). If a float is passed, the voxel is isometric. If a 2 element 1d-array is passed, the voxel is anisometric.
     """
     
     def __init__(
@@ -1267,7 +1267,7 @@ class DiscreteVoxel2D(DiscreteVoxel):
         vessel_index_grid: np.ndarray,
         dBz_grid: np.ndarray,
         permeation_probability_list: List[float],
-        size: float
+        size: Union[float, np.ndarray]
     ):
         super().__init__(
             ndims=2,

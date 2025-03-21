@@ -9,8 +9,7 @@ def main():
     nsteps = 600
     
     voxel = BOLDgeometry.ContinuousVoxel2D.from_random(
-        #num_vessels=50,
-        size = np.array([0.08, 0.04]),
+        num_vessels=50,
         CBV=0.02,
         B0=3,
         labels=['vesselGroup1'],

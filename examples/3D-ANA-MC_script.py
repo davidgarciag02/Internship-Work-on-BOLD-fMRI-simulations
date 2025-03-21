@@ -7,8 +7,7 @@ def main():
     num_steps = 600
     
     voxel = BOLDgeometry.ContinuousVoxel3D.from_random(
-        #num_vessels=50,
-        size=np.array([0.05, 0.1, 0.025]),
+        num_vessels=50,
         CBV=0.02,
         B0=3,
         labels=['vesselGroup1'],

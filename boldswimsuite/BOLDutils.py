@@ -25,7 +25,11 @@ class VoxelSize:
         elif isinstance(size, float):
             self._size = size*np.ones(ndims)
             self._ndims = ndims
-        
+
+        elif isinstance(size, int):
+            self._size = float(size)*np.ones(ndims)
+            self._ndims = ndims
+
         elif isinstance(size, VoxelSize):
             self._size = size.value
             self._ndims = size.ndims
