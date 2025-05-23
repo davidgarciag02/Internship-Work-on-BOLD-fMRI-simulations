@@ -156,9 +156,9 @@ class InfiniteCylinder3DNumba:
     def grid_is_IV(self, N: np.ndarray, subvox_size: np.ndarray):
         grid_origin = self.origin / subvox_size + (N/2)
 
-        X = (np.arange(N[0])[:, None, None] - grid_origin[0])*subvox_size[0]
-        Y = (np.arange(N[1])[None, :, None] - grid_origin[1])*subvox_size[1]
-        Z = (np.arange(N[2])[None, None, :] - grid_origin[2])*subvox_size[2]
+        X = (np.reshape(np.arange(N[0]), (N[0],1,1)) - grid_origin[0])*subvox_size[0]
+        Y = (np.reshape(np.arange(N[1]), (1,N[1],1)) - grid_origin[1])*subvox_size[1]
+        Z = (np.reshape(np.arange(N[2]), (1,1,N[2])) - grid_origin[2])*subvox_size[2]
 
         sphi = np.sin(self.phi)
         cphi = np.cos(self.phi)
@@ -669,8 +669,8 @@ class InfiniteCylinder2DNumba:
     def grid_is_IV(self, N: np.ndarray, subvox_size: np.ndarray):
         grid_origin = self.origin / subvox_size + (N/2)
 
-        X = (np.reshape(np.arange(N[0]), (N[0],1,1)) - grid_origin[0])*subvox_size[0]
-        Y = (np.reshape(np.arange(N[1]), (1,N[1],1)) - grid_origin[1])*subvox_size[1]
+        X = (np.arange(N[0])[:, None] - grid_origin[0])*subvox_size[0]
+        Y = (np.arange(N[1])[None, :] - grid_origin[1])*subvox_size[1]
 
         grid_radius = (self.diameter/2) / subvox_size
 
@@ -1102,9 +1102,9 @@ class Sphere3DNumba:
     def grid_is_IV(self, N: np.ndarray, subvox_size: np.ndarray):
         grid_origin = self.origin / subvox_size + (N/2)
 
-        X = (np.reshape(np.arange(N[0]), (N[0],1,1)) - grid_origin[0])*subvox_size[0]
-        Y = (np.reshape(np.arange(N[1]), (1,N[1],1)) - grid_origin[1])*subvox_size[1]
-        Z = (np.reshape(np.arange(N[2]), (1,1,N[2])) - grid_origin[2])*subvox_size[2]
+        X = (np.arange(N[0])[:, None, None] - grid_origin[0])*subvox_size[0]
+        Y = (np.arange(N[1])[None, :, None] - grid_origin[1])*subvox_size[1]
+        Z = (np.arange(N[2])[None, None, :] - grid_origin[2])*subvox_size[2]
 
         grid_radius = (self.diameter/2) / subvox_size
 
@@ -1520,8 +1520,8 @@ class Sphere2DNumba:
     def grid_is_IV(self, N: np.ndarray, subvox_size: np.ndarray):
         grid_origin = self.origin / subvox_size + (N/2)
 
-        X = (np.reshape(np.arange(N[0]), (N[0],1,1)) - grid_origin[0])*subvox_size[0]
-        Y = (np.reshape(np.arange(N[1]), (1,N[1],1)) - grid_origin[1])*subvox_size[1]
+        X = (np.arange(N[0])[:, None] - grid_origin[0])*subvox_size[0]
+        Y = (np.arange(N[1])[None, :] - grid_origin[1])*subvox_size[1]
 
         grid_radius = (self.diameter/2) / subvox_size
 
