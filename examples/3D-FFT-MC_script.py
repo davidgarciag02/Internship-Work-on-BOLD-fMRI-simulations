@@ -1,5 +1,5 @@
 #Importing relevant packages
-from BOLDswimsuite import BOLDgeometry, BOLDsequence, BOLDspins
+from boldswimsuite import BOLDgeometry, BOLDsequence, BOLDspins
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -30,7 +30,7 @@ def main():
         extend=True
     )
 
-    discrete_voxel.show(show_dBz=False)
+    discrete_voxel.show(show_dBz=True)
         
     spins = BOLDspins.Spins3D(
         ADC=0.001,

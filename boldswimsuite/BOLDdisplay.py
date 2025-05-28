@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 from typing import List
 import numpy as np
 
-def mlab_plot_infinite_cylinder_3d(vessel: BOLDvessel.InfiniteCylinder3DNumba, size: float, extend: bool=False):
+def mlab_plot_infinite_cylinder_3d(vessel: BOLDvessel.InfiniteCylinder3DNumba, size: np.ndarray, extend: bool=False):
 
     radius_size = (np.sqrt(3)*size)/2 if extend else size/2
     axial_points_per_size = 100
-    axial_points_per_mm = axial_points_per_size/size
+    axial_points_per_mm = axial_points_per_size/np.min(size)
     origin = np.array(vessel.origin, copy=True)
 
     curr_pos = np.array(origin, copy=True)

@@ -1,5 +1,5 @@
 from . import BOLDgeometry, BOLDsequence
-from .BOLDconstants import *
+from .BOLDutils import *
 from scipy import signal as spsig
 import scipy as sp
 import numpy as np
@@ -59,7 +59,7 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         self.kernel_type = kernel_type
         self.permeable_vessels = permeable_vessels
 
-        self.kernel = self._make_kernel()
+        self.kernel_x, self.kernel_y = self._make_kernel()
 
         super().__init__(
             sample_shape=geometry.dBz_grid.shape,
@@ -89,7 +89,7 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         # if the time step length is changed, the kernel has to be remade
         if dt != self.dt:
             self.dt=dt
-            self.kernel = self._make_kernel()
+            self.kernel_x, self.kernel_y = self._make_kernel()
 
         phase_conversion_factor = 2 * np.pi * GYROMAGNETIC_RATIO * self.dt * 0.001
 
@@ -107,9 +107,9 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         self._curr_step += 1
 
         if self.permeable_vessels:
-            self.Mx, self.My = self._unrestricted_diffusion_convolution(self.Mx, self.My, self.kernel, self.kernel_type) 
+            self.Mx, self.My = self._unrestricted_diffusion_convolution(self.Mx, self.My, self.kernel_x, self.kernel_y) 
         else:
-            self.Mx, self.My = self._restricted_diffusion_convolution(self.Mx, self.My, is_IV, not_is_IV, self.kernel, self.kernel_type) 
+            self.Mx, self.My = self._restricted_diffusion_convolution(self.Mx, self.My, is_IV, not_is_IV, self.kernel_x, self.kernel_y) 
 
         if self.T2EV is not None:
             E2 = np.exp(-dt/self.T2EV)
@@ -190,33 +190,40 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         sigma_sq = self.ADC*2*self.dt*0.001
 
         if self.kernel_type == 'Gaussian':
-            grid_range = np.linspace(-self.geometry.size/2, self.geometry.size/2, self.geometry.N)
-            X, Y = np.meshgrid(grid_range, grid_range)
-            kernel = np.exp(-((X ** 2 +  Y ** 2) / (2 * sigma_sq)))
+            size = self.geometry.size
+
+            coord = np.linspace(size.xlim[0], size.xlim[1], size.grid_shape[0])
+            kernel = np.exp(-(coord**2 / (2 * sigma_sq)))
             kernel /= np.sum(kernel)
+
+            return kernel, kernel
         
         elif self.kernel_type == 'ModifiedBessel':
             sigma = np.sqrt(sigma_sq)
-            dx = self.geometry.size/self.geometry.N
-            Nhw = int(np.ceil(6*sigma/dx))
-            kernel_range = np.abs(np.arange(-Nhw, Nhw+1))
-            kernel = np.exp(-(sigma/dx)**2)*sp.special.iv(kernel_range, (sigma/dx)**2)   
+            delta = self.geometry.size.dsdN
+            Nhw = np.ceil(6*sigma/delta).astype(int)
+
+            kernel_range_x = np.abs(np.arange(-Nhw[0], Nhw[0]+1))
+            kernel_range_y = np.abs(np.arange(-Nhw[1], Nhw[1]+1))
+            kernel_x = np.exp(-(sigma/delta[0])**2)*sp.special.iv(kernel_range_x, (sigma/delta[0])**2)  
+            kernel_y = np.exp(-(sigma/delta[1])**2)*sp.special.iv(kernel_range_y, (sigma/delta[1])**2)   
         
-            kernel_size = len(kernel)
-            if kernel_size < 5:
-                warnings.warn(f'Diffusion kernel size is very small (size={kernel_size}). This will likely introduce significant error in the diffusion! Fix by increasing spatial resolution of the voxel (N).')
+            kernel_size_x = len(kernel_x)
+            kernel_size_y = len(kernel_y)
+            if kernel_size_x < 5 or kernel_size_y < 5:
+                warnings.warn(f'Diffusion kernel size is very small (size=({kernel_size_x}, {kernel_size_y})). This will likely introduce significant error in the diffusion! Fix by increasing spatial resolution of the voxel (N).')
 
             else:
-                tqdm.write(f'Diffuson kernel size: {kernel_size}')
+                tqdm.write(f'Diffuson kernel size: ({kernel_size_x}, {kernel_size_y})')
 
-        return kernel
+            return kernel_x, kernel_y
     
     @staticmethod
     def _unrestricted_diffusion_convolution(
         Mx: np.ndarray, 
         My: np.ndarray,
-        kernel: np.ndarray,
-        kernel_type: Literal['ModifiedBessel', 'Gaussian']
+        kernel_x: np.ndarray,
+        kernel_y: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Apply 1 step of unrestricted deterministic diffusion to the magnetization arrays (Mx, My).
 
@@ -226,26 +233,21 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
             Array of magnetization in the x-direction.
         My : np.ndarray
             Array of magnetization in the y-direction.
-        kernel : np.ndarray
-            Diffusion kernel.
-        kernel_type : Literal['ModifiedBessel', 'Gaussian']
-            The type of convolution kernel to use. Default is 'ModifiedBessel'.
+        kernel_x : np.ndarray
+            Diffusion kernel in the x direction.
+        kernel_y : np.ndarray
+            Diffusion kernel in the y direction.
 
         Returns
         -------
         Tuple[np.ndarray, np.ndarray]
             The magnetization arrays (Mx, My) with 1 step of diffusion applied.
-        """    
-        if kernel_type == 'Gaussian':
-            Mx = spsig.fftconvolve(Mx, kernel, mode='same')
-            My = spsig.fftconvolve(My, kernel, mode='same')
-       
-        elif kernel_type == 'ModifiedBessel':
-            Mx = sp.ndimage.convolve1d(Mx, kernel, axis=0, mode='wrap')
-            Mx = sp.ndimage.convolve1d(Mx, kernel, axis=1, mode='wrap')
-            
-            My = sp.ndimage.convolve1d(My, kernel, axis=0, mode='wrap')
-            My = sp.ndimage.convolve1d(My, kernel, axis=1, mode='wrap')
+        """
+        Mx = sp.ndimage.convolve1d(Mx, kernel_x, axis=0, mode='wrap')
+        Mx = sp.ndimage.convolve1d(Mx, kernel_y, axis=1, mode='wrap')
+        
+        My = sp.ndimage.convolve1d(My, kernel_x, axis=0, mode='wrap')
+        My = sp.ndimage.convolve1d(My, kernel_y, axis=1, mode='wrap')
         
         return Mx, My
     
@@ -255,8 +257,8 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         My: np.ndarray, 
         ip_map: np.ndarray, 
         ep_map: np.ndarray,
-        kernel: np.ndarray,
-        kernel_type: Literal['ModifiedBessel', 'Gaussian']
+        kernel_x: np.ndarray,
+        kernel_y: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Apply 1 step of restricted deterministic diffusion to the magnetization arrays (Mx, My).
 
@@ -270,17 +272,17 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
             Boolean array indicating whether each magnetization sample is intravascular.
         ep_map : np.ndarray
             Boolean array indicating whether each magnetization sample is extravascular.
-        kernel : np.ndarray
-            Diffusion kernel.
-        kernel_type : Literal['ModifiedBessel', 'Gaussian']
-            The type of convolution kernel to use. Default is 'ModifiedBessel'.
+        kernel_x : np.ndarray
+            Diffusion kernel in the x direction.
+        kernel_y : np.ndarray
+            Diffusion kernel in the y direction.
 
         Returns
         -------
         Tuple[np.ndarray, np.ndarray]
             The magnetization arrays (Mx, My) with 1 step of diffusion applied.
         """               
-        conep, conip = DeterministicDiffuser2D._unrestricted_diffusion_convolution(ep_map * 1.0, ip_map * 1.0, kernel, kernel_type)
+        conep, conip = DeterministicDiffuser2D._unrestricted_diffusion_convolution(ep_map * 1.0, ip_map * 1.0, kernel_x, kernel_y)
 
         Wep = conip * ep_map
         Wip = conep * ip_map
@@ -289,11 +291,11 @@ class DeterministicDiffuser2D(BOLDsequence.Sequence):
         Mxip = Mx * ip_map
         Myip = My * ip_map
              
-        Mxep_diff, Myep_diff = DeterministicDiffuser2D._unrestricted_diffusion_convolution(Mxep, Myep, kernel, kernel_type)
+        Mxep_diff, Myep_diff = DeterministicDiffuser2D._unrestricted_diffusion_convolution(Mxep, Myep, kernel_x, kernel_y)
         Mxep = Mxep_diff * ep_map + Wep * Mxep
         Myep = Myep_diff * ep_map + Wep * Myep
         
-        Mxip_diff, Myip_diff = DeterministicDiffuser2D._unrestricted_diffusion_convolution(Mxip, Myip, kernel, kernel_type)
+        Mxip_diff, Myip_diff = DeterministicDiffuser2D._unrestricted_diffusion_convolution(Mxip, Myip, kernel_x, kernel_y)
         Mxip = Mxip_diff * ip_map + Wip * Mxip
         Myip = Myip_diff * ip_map + Wip * Myip
 

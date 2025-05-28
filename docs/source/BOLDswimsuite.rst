@@ -4,42 +4,42 @@ BOLDswimsuite package
 Submodules
 ----------
 
-BOLDswimsuite.BOLDvessel module
+BOLDvessel
 -------------------------------
 
-.. automodule:: BOLDswimsuite.BOLDvessel
+.. automodule:: boldswimsuite.BOLDvessel
    :members: InfiniteCylinder3D, InfiniteCylinder2D, Sphere3D, Sphere2D
    :undoc-members:
    :show-inheritance:
 
-BOLDswimsuite.BOLDgeometry module
+BOLDgeometry
 ---------------------------------
 
-.. automodule:: BOLDswimsuite.BOLDgeometry
+.. automodule:: boldswimsuite.BOLDgeometry
    :members: ContinuousVoxel3D, ContinuousVoxel2D, DiscreteVoxel3D, DiscreteVoxel2D
    :inherited-members:
    :show-inheritance:
 
-BOLDswimsuite.BOLDspins module
+BOLDspins
 ------------------------------
 
-.. automodule:: BOLDswimsuite.BOLDspins
+.. automodule:: boldswimsuite.BOLDspins
    :members: Spins3D, Spins2D
    :inherited-members:
    :show-inheritance:
 
-BOLDswimsuite.BOLDsequence module
+BOLDsequence
 ---------------------------------
 
-.. automodule:: BOLDswimsuite.BOLDsequence
+.. automodule:: boldswimsuite.BOLDsequence
    :members: Sequence, SpinSequence
    :undoc-members:
    :show-inheritance:
 
-BOLDswimsuite.BOLDdeterministic module
+BOLDdeterministic
 --------------------------------------
 
-.. automodule:: BOLDswimsuite.BOLDdeterministic
+.. automodule:: boldswimsuite.BOLDdeterministic
    :members: DeterministicDiffuser2D
    :undoc-members:
    :show-inheritance:
@@ -47,7 +47,7 @@ BOLDswimsuite.BOLDdeterministic module
 Module contents
 ---------------
 
-.. automodule:: BOLDswimsuite
+.. automodule:: boldswimsuite
    :members:
    :undoc-members:
    :show-inheritance:
