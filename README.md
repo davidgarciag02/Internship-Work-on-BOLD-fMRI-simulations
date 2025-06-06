@@ -36,3 +36,8 @@ jupyter notebook
 ```
 
 This will open Jupyter in a web browser, where you will be greeted with the UI showing the current directory. From there enter the "lessons" directory. The lessons should be listed, they can be opened in the browser. Lesson 0 briefly explains how to use Jupyter notebooks, so anyone unfamiliar with them should start there. Otherwise lesson 1 covers the first topic on BOLDswimsuite.
+
+## Citation
+To reference this tool, please use:
+
+Jacob Chaussé, Avery J. L. Berman, J. Jean Chen; BOLDsωimsuite: A new software suite for forward modeling of the BOLD fMRI signal. Imaging Neuroscience 2025; 3 imag_a_00519. doi: https://doi.org/10.1162/imag_a_00519
