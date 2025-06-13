@@ -1,3 +1,5 @@
+<img width=400 alt="BOLDswimsuite logo" src="https://github.com/user-attachments/assets/e64cd7b2-3f87-4c31-bd0c-2ed32d24e73d">
+
 # Installation Guide
 
 ## Requirements
